@@ -26,6 +26,8 @@ struct StampEditor: View {
     @State private var pickerItems: [PhotosPickerItem] = []
     @State private var viewing: PhotoRef?
     @State private var nonAlcoholic: Bool
+    @State private var showPublish = false
+    @State private var published = false
     @FocusState private var notesFocused: Bool
 
     init(park: Park, drink: Drink, existing: Stamp?, existingRank: Int?, stampedCount: Int, isOpen: Bool) {
@@ -72,6 +74,14 @@ struct StampEditor: View {
         .sheet(item: $viewing) { photo in
             PhotoViewer(name: photo.name)
         }
+        .sheet(isPresented: $showPublish) {
+            PublishDrinkSheet(park: park, drink: drink) {
+                published = true
+            }
+            .environmentObject(store)
+            .preferredColorScheme(.light)
+            .tint(Theme.cover)
+        }
     }
 
     // MARK: Left page
@@ -101,6 +111,7 @@ struct StampEditor: View {
 
             notesField
             photosField
+            curatorRow
         } footer: {
             VStack(alignment: .leading, spacing: 2) {
                 Text(Formats.mrz(["P", park.name, drink.name]))
@@ -142,6 +153,8 @@ struct StampEditor: View {
     /// is ticked and does not depend on stamping.
     private var nonAlcoholicCheckbox: some View {
         Button {
+            // Catalog drinks are fixed; only your own can be changed.
+            guard store.isCustom(drink) else { return }
             nonAlcoholic.toggle()
             store.setNonAlcoholic(nonAlcoholic, for: drink, in: park)
         } label: {
@@ -164,8 +177,31 @@ struct StampEditor: View {
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
+        .opacity(store.isCustom(drink) ? 1 : 0.55)
         .accessibilityLabel("Non-alcoholic")
         .accessibilityAddTraits(nonAlcoholic ? .isSelected : [])
+    }
+
+    /// Curator only: shown for a personal drink when a GitHub token is saved.
+    @ViewBuilder
+    private var curatorRow: some View {
+        if published {
+            Text("PUBLISHED TO THE CATALOG")
+                .font(Theme.mono(11))
+                .tracking(1.1)
+                .foregroundStyle(Theme.muted)
+        } else if store.isCustom(drink), TokenStore.load() != nil {
+            Button {
+                showPublish = true
+            } label: {
+                HStack(spacing: 8) {
+                    Image(systemName: "arrow.up.doc")
+                    Text("PUBLISH TO CATALOG")
+                    Spacer()
+                }
+            }
+            .buttonStyle(LinkButtonStyle())
+        }
     }
 
     private var photosField: some View {

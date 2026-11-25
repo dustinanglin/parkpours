@@ -29,6 +29,7 @@ targets:
         # Asking for landscape while open turns the pages sideways.
         INFOPLIST_KEY_UISupportedInterfaceOrientations: "UIInterfaceOrientationPortrait"
         INFOPLIST_KEY_ITSAppUsesNonExemptEncryption: "NO"
+        INFOPLIST_KEY_NSCameraUsageDescription: "Park Pours uses the camera to read drink names from a menu. The photo stays on your phone."
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
         ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME: AccentColor
         TARGETED_DEVICE_FAMILY: "1"

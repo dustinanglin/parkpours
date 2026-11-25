@@ -1,9 +1,16 @@
 import Foundation
 import SwiftUI
 
-/// Single source of truth. Saved as JSON in the app's Documents folder.
+/// Single source of truth. The official catalog and the person's own
+/// passport are stored separately and merged into `parks` for the views.
 final class PassportStore: ObservableObject {
+    /// Personal data, saved as JSON in the app's Documents folder.
     @Published private(set) var data: PassportData
+    @Published private(set) var catalog: Catalog
+    /// Catalog parks and drinks, plus whatever this person added.
+    @Published private(set) var parks: [Park] = []
+
+    private var customDrinkIDs: Set<String> = []
 
     private static var fileURL: URL {
         let dir = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
@@ -28,25 +35,112 @@ final class PassportStore: ObservableObject {
            let decoded = try? Self.decoder.decode(PassportData.self, from: raw) {
             data = decoded
         } else {
-            data = SeedData.fresh
+            data = PassportData(parks: [], stamps: [:], rankings: [:])
         }
+        catalog = CatalogSource.loadLocal()
+        // Passports from before the catalog existed hold a full copy of the
+        // starter drinks. Drop anything the catalog now provides.
+        if pruneCatalogCopies() {
+            save()
+        }
+        rebuild()
     }
 
-    private func persist() {
+    private func save() {
         guard let raw = try? Self.encoder.encode(data) else { return }
         try? raw.write(to: Self.fileURL, options: .atomic)
     }
 
+    private func persist() {
+        save()
+        rebuild()
+    }
+
+    /// Merges the catalog with the person's own parks and drinks.
+    private func rebuild() {
+        var custom = Dictionary(data.parks.map { ($0.id, $0) }, uniquingKeysWith: { first, _ in first })
+        var catalogDrinkIDs: Set<String> = []
+        var merged: [Park] = []
+
+        for var park in catalog.parks {
+            let known = Set(park.drinks.map { $0.id })
+            catalogDrinkIDs.formUnion(known)
+            park.drinks = park.drinks.filter { !$0.retired || data.stamps[$0.id] != nil }
+            if let mine = custom.removeValue(forKey: park.id) {
+                park.drinks += mine.drinks.filter { !known.contains($0.id) }
+            }
+            merged.append(park)
+        }
+        // Parks this person added, in the order they added them.
+        for park in data.parks where custom[park.id] != nil {
+            merged.append(park)
+            custom[park.id] = nil
+        }
+
+        customDrinkIDs = Set(data.parks.flatMap { $0.drinks.map { $0.id } }).subtracting(catalogDrinkIDs)
+        parks = merged
+    }
+
+    /// Removes personal copies of drinks the catalog has. Returns true if
+    /// anything changed.
+    private func pruneCatalogCopies() -> Bool {
+        let catalogParkIDs = Set(catalog.parks.map { $0.id })
+        let catalogDrinkIDs = Set(catalog.parks.flatMap { $0.drinks.map { $0.id } })
+        var changed = false
+        var kept: [Park] = []
+        for var park in data.parks {
+            let before = park.drinks.count
+            park.drinks.removeAll { catalogDrinkIDs.contains($0.id) }
+            if park.drinks.count != before {
+                changed = true
+            }
+            if park.drinks.isEmpty && catalogParkIDs.contains(park.id) {
+                changed = true
+                continue
+            }
+            kept.append(park)
+        }
+        if changed {
+            data.parks = kept
+        }
+        return changed
+    }
+
+    // MARK: Catalog
+
+    /// Takes a catalog if it is at least as new as the one in use.
+    @MainActor
+    func adopt(_ newCatalog: Catalog) {
+        guard newCatalog.version >= catalog.version else { return }
+        catalog = newCatalog
+        CatalogSource.cache(newCatalog)
+        if pruneCatalogCopies() {
+            save()
+        }
+        rebuild()
+    }
+
+    /// Checks for a newer catalog. Quietly keeps the current one on failure.
+    @MainActor
+    func refreshCatalog() async {
+        if let remote = await CatalogSource.fetchRemote() {
+            adopt(remote)
+        }
+    }
+
+    /// True for a drink this person added, as opposed to a catalog drink.
+    func isCustom(_ drink: Drink) -> Bool {
+        customDrinkIDs.contains(drink.id)
+    }
+
     // MARK: Reading
 
-    var parks: [Park] { data.parks }
-
     var totalStamps: Int {
-        data.parks.reduce(0) { $0 + stampedCount(in: $1) }
+        parks.reduce(0) { $0 + stampedCount(in: $1) }
     }
 
     func park(_ id: String) -> Park? {
-        data.parks.first { $0.id == id }
+        parks.first { $0.id == id }
     }
 
     func stamp(for drink: Drink) -> Stamp? {
@@ -78,7 +172,7 @@ final class PassportStore: ObservableObject {
     }
 
     func allStamped(with verdict: Verdict) -> [StampedEntry] {
-        data.parks
+        parks
             .flatMap { ranked(in: $0) }
             .filter { $0.stamp.verdict == verdict }
     }
@@ -101,10 +195,11 @@ final class PassportStore: ObservableObject {
         persist()
     }
 
+    /// Adds a personal drink to a park, whether the park is from the catalog
+    /// or one this person created.
     func addDrink(name: String, venue: String, nonAlcoholic: Bool = false, to park: Park) {
         let trimmed = name.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !trimmed.isEmpty,
-              let index = data.parks.firstIndex(where: { $0.id == park.id }) else { return }
+        guard !trimmed.isEmpty else { return }
         let drink = Drink(
             id: UUID().uuidString,
             name: trimmed,
@@ -112,10 +207,15 @@ final class PassportStore: ObservableObject {
             area: "",
             nonAlcoholic: nonAlcoholic
         )
-        data.parks[index].drinks.append(drink)
+        if let index = data.parks.firstIndex(where: { $0.id == park.id }) {
+            data.parks[index].drinks.append(drink)
+        } else {
+            data.parks.append(Park(id: park.id, name: park.name, resort: park.resort, drinks: [drink]))
+        }
         persist()
     }
 
+    /// Only personal drinks can be changed here; catalog drinks are fixed.
     func setNonAlcoholic(_ value: Bool, for drink: Drink, in park: Park) {
         guard let parkIndex = data.parks.firstIndex(where: { $0.id == park.id }),
               let drinkIndex = data.parks[parkIndex].drinks.firstIndex(where: { $0.id == drink.id }) else { return }

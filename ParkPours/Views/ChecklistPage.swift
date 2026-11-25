@@ -9,6 +9,7 @@ struct ChecklistPage: View {
     let onIndex: () -> Void
 
     @State private var showAdd = false
+    @State private var showScan = false
     @State private var newName = ""
     @State private var newVenue = ""
 
@@ -31,12 +32,17 @@ struct ChecklistPage: View {
                         Button {
                             onSelect(drink)
                         } label: {
-                            DrinkRow(drink: drink, stamp: store.stamp(for: drink))
+                            DrinkRow(
+                                drink: drink,
+                                stamp: store.stamp(for: drink),
+                                isPersonal: store.isCustom(drink)
+                            )
                         }
                         .buttonStyle(.plain)
                         DottedRule()
                     }
                     addButton
+                    scanButton
                 }
             }
         } footer: {
@@ -50,6 +56,12 @@ struct ChecklistPage: View {
                         .foregroundStyle(Theme.muted)
                 }
             }
+        }
+        .sheet(isPresented: $showScan) {
+            MenuScanSheet(park: park)
+                .environmentObject(store)
+                .preferredColorScheme(.light)
+                .tint(Theme.cover)
         }
         .alert("Add a drink", isPresented: $showAdd) {
             TextField("Drink name", text: $newName)
@@ -101,11 +113,26 @@ struct ChecklistPage: View {
         }
         .buttonStyle(LinkButtonStyle())
     }
+
+    private var scanButton: some View {
+        Button {
+            showScan = true
+        } label: {
+            HStack(spacing: 8) {
+                Image(systemName: "text.viewfinder")
+                Text("SCAN A MENU")
+                Spacer()
+            }
+        }
+        .buttonStyle(LinkButtonStyle())
+    }
 }
 
 private struct DrinkRow: View {
     let drink: Drink
     let stamp: Stamp?
+    /// Added by this person, not from the official catalog.
+    let isPersonal: Bool
 
     var body: some View {
         HStack(spacing: 12) {
@@ -119,8 +146,8 @@ private struct DrinkRow: View {
                         ZeroProofTag()
                     }
                 }
-                if !drink.subtitle.isEmpty {
-                    Text(drink.subtitle)
+                if !subtitle.isEmpty {
+                    Text(subtitle)
                         .font(Theme.mono(11))
                         .foregroundStyle(Theme.muted)
                 }
@@ -139,6 +166,17 @@ private struct DrinkRow: View {
         }
         .frame(minHeight: 58)
         .contentShape(Rectangle())
+    }
+
+    private var subtitle: String {
+        var parts: [String] = []
+        if !drink.subtitle.isEmpty {
+            parts.append(drink.subtitle)
+        }
+        if isPersonal {
+            parts.append("added by you")
+        }
+        return parts.joined(separator: " · ")
     }
 }
 

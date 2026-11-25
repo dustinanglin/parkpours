@@ -64,10 +64,38 @@ One-time setup, all in a browser:
 
 The build number is the workflow run number.
 
+## The catalog
+
+Parks and drinks come from two places, merged in the app:
+
+- **The official catalog**: one hand-curated file, `catalog.json`, on the
+  `catalog` branch. The app ships with a copy and downloads the newest one
+  each time it starts, so catalog changes need no new build. It is curated by
+  hand on purpose: it is not pulled from any third-party menu site.
+- **Personal drinks and parks**: anything a person adds in the app. These stay
+  on their phone and are marked "added by you".
+
+Stamps, notes, photos and rankings are always personal and stay on the phone.
+
+**Scan a menu.** On a park's checklist, "Scan a menu" reads the text off a
+photo of a menu (on the phone, nothing is uploaded) and lets you tick the
+lines that are drinks. They are added as personal drinks.
+
+**Curating the catalog.** With a GitHub token saved in the app (the same one
+used for bug reports), a personal drink's entry page shows "Publish to
+catalog". That lets you tidy the name, venue and area and writes the drink
+into `catalog.json`. The drink keeps its id, so your stamp carries over.
+
+The file can also be edited directly on GitHub. Each drink needs a unique
+`id` and a `name`; `venue`, `area`, `nonAlcoholic` and `retired` are optional.
+Add one to `version` when you edit by hand. To take a drink off the menu, set
+`"retired": true` instead of deleting it, so existing stamps keep their drink.
+
 ## Non-alcoholic drinks
 
 Mocktails and other specialty drinks can be logged too. Tick "Non-alcoholic"
-on a drink's entry page, or choose "Add as non-alcoholic" when adding one.
+on the entry page of a drink you added, or choose "Add as non-alcoholic" when
+adding one. For catalog drinks the tag is set in the catalog.
 Tagged drinks show a small "Zero proof" mark in the checklist and rankings.
 
 ## Reporting bugs from the app
