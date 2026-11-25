@@ -26,7 +26,12 @@ struct RankingsPage: View {
                 }
             }
         } footer: {
-            EmptyView()
+            HStack {
+                Spacer()
+                Text("ALL STAMPS ›")
+                    .font(Theme.mono(11))
+                    .foregroundStyle(Theme.muted)
+            }
         }
     }
 

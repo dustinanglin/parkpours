@@ -31,9 +31,19 @@ struct PaperBackground: View {
     }
 }
 
-/// The gutter shadow that sits over the fold.
+/// The gutter shadow that sits over the fold: the centre of the whole
+/// window, not of the safe area.
 struct SpineShadow: View {
     var body: some View {
+        Color.clear
+            .overlay {
+                gradient.frame(width: 60)
+            }
+            .ignoresSafeArea()
+            .allowsHitTesting(false)
+    }
+
+    private var gradient: some View {
         LinearGradient(
             stops: [
                 .init(color: Color.black.opacity(0), location: 0),
@@ -45,9 +55,6 @@ struct SpineShadow: View {
             startPoint: .leading,
             endPoint: .trailing
         )
-        .frame(width: 60)
-        .ignoresSafeArea()
-        .allowsHitTesting(false)
     }
 }
 

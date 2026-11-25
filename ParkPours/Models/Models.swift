@@ -50,6 +50,23 @@ struct Stamp: Codable, Hashable {
     var verdict: Verdict
     var date: Date
     var notes: String
+    /// File names of photos kept by `PhotoStore`.
+    var photos: [String] = []
+
+    private enum CodingKeys: String, CodingKey {
+        case verdict, date, notes, photos
+    }
+}
+
+extension Stamp {
+    /// Passports saved before photos existed have no `photos` key.
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        verdict = try container.decode(Verdict.self, forKey: .verdict)
+        date = try container.decode(Date.self, forKey: .date)
+        notes = try container.decode(String.self, forKey: .notes)
+        photos = try container.decodeIfPresent([String].self, forKey: .photos) ?? []
+    }
 }
 
 /// Everything the passport persists. `stamps` is keyed by drink id;

@@ -1,30 +1,22 @@
 import SwiftUI
 
 /// Decides between the two-page spread (Duo open) and the cover plus
-/// one-page-at-a-time book (cover screen, or any slab iPhone).
+/// one-page-at-a-time book (cover screen, or any slab iPhone), and builds the
+/// pages of the book.
 struct RootView: View {
     @EnvironmentObject private var store: PassportStore
     @AppStorage("lastParkID") private var lastParkID = ""
 
     @State private var spread: Spread = .index
     @State private var showCover = true
-    @State private var compactPage = 0
+    @State private var pageIndex = 0
     @State private var editTarget: EditTarget?
 
     var body: some View {
         GeometryReader { geo in
-            let isOpen = BookLayout.isOpen(geo.size)
+            let isOpen = BookLayout.isOpen(BookLayout.windowSize(geo))
             ZStack {
-                if isOpen {
-                    PaperBackground()
-                    HStack(spacing: 0) {
-                        leftPage(compact: false)
-                            .frame(width: geo.size.width / 2)
-                        rightPage
-                            .frame(width: geo.size.width / 2)
-                    }
-                    SpineShadow()
-                } else if showCover {
+                if !isOpen && showCover {
                     CoverView(
                         stampCount: store.totalStamps,
                         onOpen: openBook,
@@ -32,68 +24,108 @@ struct RootView: View {
                     )
                 } else {
                     PaperBackground()
-                    TabView(selection: $compactPage) {
-                        leftPage(compact: true)
-                            .tag(0)
-                        rightPage
-                            .tag(1)
+                    BookPager(pages: pages(compact: !isOpen), isOpen: isOpen, index: $pageIndex)
+                        .id(pagerID(isOpen: isOpen))
+                        .ignoresSafeArea()
+                    if isOpen {
+                        SpineShadow()
                     }
-                    .tabViewStyle(.page(indexDisplayMode: .never))
                 }
             }
+            .onAppear {
+                OrientationLock.apply(isOpen: isOpen)
+            }
+            .onChange(of: isOpen) { _, nowOpen in
+                OrientationLock.apply(isOpen: nowOpen)
+            }
+            .fullScreenCover(item: $editTarget) { target in
+                editor(for: target, isOpen: isOpen)
+            }
+            .feedbackReporter(isActive: editTarget == nil)
         }
-        .fullScreenCover(item: $editTarget) { target in
-            editor(for: target)
-        }
-        .feedbackReporter(isActive: editTarget == nil)
+        // The keyboard must not change the open/closed decision.
+        .ignoresSafeArea(.keyboard)
     }
 
     // MARK: Pages
 
-    @ViewBuilder
-    private func leftPage(compact: Bool) -> some View {
-        if let park = currentPark {
-            ChecklistPage(
-                park: park,
-                compact: compact,
-                onSelect: { drink in edit(drink, in: park) },
-                onIndex: { go(.index) }
-            )
-        } else {
-            ParksPage(
+    /// A new id rebuilds the pager: needed when the book opens or closes, and
+    /// when moving between the index and a park.
+    private func pagerID(isOpen: Bool) -> String {
+        switch spread {
+        case .index:
+            return "index-\(isOpen)"
+        case .park(let id):
+            return "park-\(id)-\(isOpen)"
+        }
+    }
+
+    private func pages(compact: Bool) -> [BookPage] {
+        if case .park(let id) = spread, let park = store.park(id) {
+            return [
+                page("checklist-\(id)", ChecklistPage(
+                    park: park,
+                    compact: compact,
+                    onSelect: { drink in edit(drink, in: park) },
+                    onIndex: { go(.index) }
+                )),
+                page("stamps-\(id)", StampsPage(
+                    park: park,
+                    onSelect: { drink in edit(drink, in: park) }
+                ))
+            ]
+        }
+
+        var result = [
+            page("parks", ParksPage(
                 compact: compact,
                 onOpen: { park in go(.park(park.id)) },
                 onClose: compact ? closeBook : nil
-            )
+            )),
+            page("rankings", RankingsPage(
+                onSelect: { park, drink in edit(drink, in: park) }
+            ))
+        ]
+
+        // All stamps: one page per park that has at least one stamp.
+        let stamped = store.parks.filter { store.stampedCount(in: $0) > 0 }
+        if stamped.isEmpty {
+            result.append(page("all-stamps-empty", AllStampsEmptyPage()))
         }
+        for park in stamped {
+            result.append(page("all-stamps-\(park.id)", StampsPage(
+                park: park,
+                showsTitle: true,
+                onOpenPark: { go(.park(park.id)) },
+                onSelect: { drink in edit(drink, in: park) }
+            )))
+        }
+        return result
     }
 
-    @ViewBuilder
-    private var rightPage: some View {
-        if let park = currentPark {
-            StampsPage(park: park, onSelect: { drink in edit(drink, in: park) })
-        } else {
-            RankingsPage(onSelect: { park, drink in edit(drink, in: park) })
-        }
+    /// Pages are hosted outside the SwiftUI tree, so each one carries its own
+    /// paper, store and styling.
+    private func page<Content: View>(_ id: String, _ content: Content) -> BookPage {
+        BookPage(id: id, view: AnyView(
+            ZStack {
+                PaperBackground()
+                content
+            }
+            .environmentObject(store)
+            .preferredColorScheme(.light)
+            .tint(Theme.cover)
+        ))
     }
 
-    private var currentPark: Park? {
-        switch spread {
-        case .index:
-            return nil
-        case .park(let id):
-            return store.park(id)
-        }
-    }
-
-    private func editor(for target: EditTarget) -> some View {
+    private func editor(for target: EditTarget, isOpen: Bool) -> some View {
         let park = store.park(target.park.id) ?? target.park
         return StampEditor(
             park: park,
             drink: target.drink,
             existing: store.stamp(for: target.drink),
             existingRank: store.rank(of: target.drink, in: park),
-            stampedCount: store.stampedCount(in: park)
+            stampedCount: store.stampedCount(in: park),
+            isOpen: isOpen
         )
         .environmentObject(store)
         .preferredColorScheme(.light)
@@ -106,10 +138,8 @@ struct RootView: View {
         if case .park(let id) = next {
             lastParkID = id
         }
-        withAnimation(.easeInOut(duration: 0.25)) {
-            spread = next
-            compactPage = 0
-        }
+        spread = next
+        pageIndex = 0
     }
 
     private func edit(_ drink: Drink, in park: Park) {
@@ -134,5 +164,22 @@ struct RootView: View {
             go(.park(park.id))
         }
         openBook()
+    }
+}
+
+/// Shown in the "all stamps" section before anything has been stamped.
+struct AllStampsEmptyPage: View {
+    var body: some View {
+        PageScaffold(leading: "ALL STAMPS", trailing: "") {
+            Text("All stamps")
+                .font(Theme.serif(26, weight: .bold))
+                .foregroundStyle(Theme.ink)
+            Text("Each park gets a page here once it has a stamp.")
+                .font(Theme.mono(13))
+                .foregroundStyle(Theme.muted)
+            Spacer(minLength: 0)
+        } footer: {
+            EmptyView()
+        }
     }
 }
