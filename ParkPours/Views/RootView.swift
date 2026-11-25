@@ -32,12 +32,6 @@ struct RootView: View {
                     }
                 }
             }
-            .onAppear {
-                OrientationLock.apply(isOpen: isOpen)
-            }
-            .onChange(of: isOpen) { _, nowOpen in
-                OrientationLock.apply(isOpen: nowOpen)
-            }
             .fullScreenCover(item: $editTarget) { target in
                 editor(for: target, isOpen: isOpen)
             }
