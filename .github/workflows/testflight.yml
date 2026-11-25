@@ -13,8 +13,10 @@ concurrency:
 jobs:
   # Compiles for the simulator with no signing, so code errors show up
   # even before any Apple secrets are configured.
+  # Both jobs use GitHub's Xcode 27 image (macOS 27) for the iOS 27 SDK,
+  # which the iPhone Duo needs. `macos-latest` only carries Xcode 26.
   compile:
-    runs-on: macos-latest
+    runs-on: xcode-27
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
@@ -41,7 +43,7 @@ jobs:
   testflight:
     needs: compile
     if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
-    runs-on: macos-latest
+    runs-on: xcode-27
     timeout-minutes: 45
     env:
       ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
