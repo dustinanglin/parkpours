@@ -101,7 +101,7 @@ final class PassportStore: ObservableObject {
         persist()
     }
 
-    func addDrink(name: String, venue: String, to park: Park) {
+    func addDrink(name: String, venue: String, nonAlcoholic: Bool = false, to park: Park) {
         let trimmed = name.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty,
               let index = data.parks.firstIndex(where: { $0.id == park.id }) else { return }
@@ -109,9 +109,17 @@ final class PassportStore: ObservableObject {
             id: UUID().uuidString,
             name: trimmed,
             venue: venue.trimmingCharacters(in: .whitespacesAndNewlines),
-            area: ""
+            area: "",
+            nonAlcoholic: nonAlcoholic
         )
         data.parks[index].drinks.append(drink)
+        persist()
+    }
+
+    func setNonAlcoholic(_ value: Bool, for drink: Drink, in park: Park) {
+        guard let parkIndex = data.parks.firstIndex(where: { $0.id == park.id }),
+              let drinkIndex = data.parks[parkIndex].drinks.firstIndex(where: { $0.id == drink.id }) else { return }
+        data.parks[parkIndex].drinks[drinkIndex].nonAlcoholic = value
         persist()
     }
 

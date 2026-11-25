@@ -143,3 +143,20 @@ struct ProgressRule: View {
         .accessibilityHidden(true)
     }
 }
+
+/// Small boxed tag marking a non-alcoholic drink.
+struct ZeroProofTag: View {
+    var body: some View {
+        Text("ZERO PROOF")
+            .font(Theme.mono(9, weight: .medium))
+            .tracking(0.8)
+            .foregroundStyle(Theme.muted)
+            .padding(.horizontal, 4)
+            .padding(.vertical, 1)
+            .overlay {
+                Rectangle().strokeBorder(Theme.muted, lineWidth: 1)
+            }
+            .fixedSize()
+            .accessibilityLabel("Non-alcoholic")
+    }
+}

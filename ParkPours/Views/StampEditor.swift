@@ -25,6 +25,7 @@ struct StampEditor: View {
     @State private var removedPhotos: [String] = []
     @State private var pickerItems: [PhotosPickerItem] = []
     @State private var viewing: PhotoRef?
+    @State private var nonAlcoholic: Bool
     @FocusState private var notesFocused: Bool
 
     init(park: Park, drink: Drink, existing: Stamp?, existingRank: Int?, stampedCount: Int, isOpen: Bool) {
@@ -32,6 +33,7 @@ struct StampEditor: View {
         self.drink = drink
         self.isOpen = isOpen
         _photos = State(initialValue: existing?.photos ?? [])
+        _nonAlcoholic = State(initialValue: drink.nonAlcoholic)
         self.isExisting = existing != nil
         let top = max(existing == nil ? stampedCount + 1 : stampedCount, 1)
         self.maxRank = top
@@ -87,10 +89,14 @@ struct StampEditor: View {
                 field("AREA", drink.area.isEmpty ? "—" : drink.area)
             }
 
-            VStack(alignment: .leading, spacing: 2) {
-                fieldLabel("DATE OF ENTRY")
-                DatePicker("Date of entry", selection: $date, displayedComponents: .date)
-                    .labelsHidden()
+            HStack(alignment: .bottom, spacing: 16) {
+                VStack(alignment: .leading, spacing: 2) {
+                    fieldLabel("DATE OF ENTRY")
+                    DatePicker("Date of entry", selection: $date, displayedComponents: .date)
+                        .labelsHidden()
+                }
+                Spacer(minLength: 0)
+                nonAlcoholicCheckbox
             }
 
             notesField
@@ -130,6 +136,36 @@ struct StampEditor: View {
                 .scrollContentBackground(.hidden)
                 .frame(minHeight: 110)
         }
+    }
+
+    /// A property of the drink, not of the stamp, so it saves as soon as it
+    /// is ticked and does not depend on stamping.
+    private var nonAlcoholicCheckbox: some View {
+        Button {
+            nonAlcoholic.toggle()
+            store.setNonAlcoholic(nonAlcoholic, for: drink, in: park)
+        } label: {
+            HStack(spacing: 8) {
+                ZStack {
+                    Rectangle().strokeBorder(Theme.ink, lineWidth: 1.5)
+                    if nonAlcoholic {
+                        Image(systemName: "checkmark")
+                            .font(.system(size: 11, weight: .heavy))
+                            .foregroundStyle(Theme.ink)
+                    }
+                }
+                .frame(width: 22, height: 22)
+                Text("NON-ALCOHOLIC")
+                    .font(Theme.mono(11))
+                    .tracking(1.1)
+                    .foregroundStyle(Theme.ink)
+            }
+            .frame(minHeight: 44)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel("Non-alcoholic")
+        .accessibilityAddTraits(nonAlcoholic ? .isSelected : [])
     }
 
     private var photosField: some View {
