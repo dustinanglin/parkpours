@@ -49,10 +49,23 @@ struct FeedbackDraft: Identifiable {
             let scale = Int(window.screen.scale.rounded())
             let layout = BookLayout.isOpen(bounds.size) ? "open (two-page spread)" : "closed (single page)"
             context.append("Window: \(width) x \(height) pt @\(scale)x")
+            if let scene = window.windowScene {
+                context.append("Orientation: \(orientationName(scene.effectiveGeometry.interfaceOrientation))")
+            }
             context.append("Layout: \(layout)")
         }
 
         return FeedbackDraft(screenshot: screenshot, context: context)
+    }
+
+    private static func orientationName(_ orientation: UIInterfaceOrientation) -> String {
+        switch orientation {
+        case .portrait: return "portrait"
+        case .portraitUpsideDown: return "portrait upside down"
+        case .landscapeLeft: return "landscape left"
+        case .landscapeRight: return "landscape right"
+        default: return "unknown"
+        }
     }
 
     private static func modelIdentifier() -> String {
