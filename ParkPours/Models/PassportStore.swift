@@ -95,6 +95,7 @@ final class PassportStore: ObservableObject {
     }
 
     func removeStamp(for drink: Drink, in park: Park) {
+        data.stamps[drink.id]?.photos.forEach { PhotoStore.delete($0) }
         data.stamps[drink.id] = nil
         data.rankings[park.id] = (data.rankings[park.id] ?? []).filter { $0 != drink.id }
         persist()

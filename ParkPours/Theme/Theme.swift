@@ -39,11 +39,21 @@ enum Theme {
 }
 
 enum BookLayout {
-    /// True when the window is big enough for a two-page spread. The open Duo
-    /// is expected to report roughly 890 x 626 points; a slab iPhone or the
-    /// Duo's cover screen falls back to one page at a time.
+    /// True when the window is big enough for a two-page spread, whichever
+    /// way it is turned. The open Duo reports 951 x 669 points; a slab iPhone
+    /// or the Duo's cover screen is under 500 on its short side and falls back
+    /// to one page at a time.
     static func isOpen(_ size: CGSize) -> Bool {
-        size.width >= 700 && size.height >= 500
+        min(size.width, size.height) >= 500 && max(size.width, size.height) >= 700
+    }
+
+    /// The whole window: the laid-out size plus its safe-area insets.
+    static func windowSize(_ geo: GeometryProxy) -> CGSize {
+        let insets = geo.safeAreaInsets
+        return CGSize(
+            width: geo.size.width + insets.leading + insets.trailing,
+            height: geo.size.height + insets.top + insets.bottom
+        )
     }
 }
 

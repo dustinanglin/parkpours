@@ -1,3 +1,4 @@
+import PhotosUI
 import SwiftUI
 
 /// The stamping spread: entry application on the left, verdict on the right.
@@ -8,6 +9,7 @@ struct StampEditor: View {
 
     let park: Park
     let drink: Drink
+    private let isOpen: Bool
     private let isExisting: Bool
     private let maxRank: Int
 
@@ -16,11 +18,20 @@ struct StampEditor: View {
     @State private var notes: String
     @State private var rank: Int
     @State private var stamped = false
+    @State private var photos: [String]
+    /// Photos saved to disk during this edit; deleted again on cancel.
+    @State private var addedPhotos: [String] = []
+    /// Photos taken off an existing stamp; deleted from disk on save.
+    @State private var removedPhotos: [String] = []
+    @State private var pickerItems: [PhotosPickerItem] = []
+    @State private var viewing: PhotoRef?
     @FocusState private var notesFocused: Bool
 
-    init(park: Park, drink: Drink, existing: Stamp?, existingRank: Int?, stampedCount: Int) {
+    init(park: Park, drink: Drink, existing: Stamp?, existingRank: Int?, stampedCount: Int, isOpen: Bool) {
         self.park = park
         self.drink = drink
+        self.isOpen = isOpen
+        _photos = State(initialValue: existing?.photos ?? [])
         self.isExisting = existing != nil
         let top = max(existing == nil ? stampedCount + 1 : stampedCount, 1)
         self.maxRank = top
@@ -35,28 +46,29 @@ struct StampEditor: View {
     }
 
     var body: some View {
-        GeometryReader { geo in
-            let open = BookLayout.isOpen(geo.size)
-            ZStack {
-                PaperBackground()
-                if open {
-                    HStack(spacing: 0) {
-                        formPage
-                            .frame(width: geo.size.width / 2)
-                        verdictPage
-                            .frame(width: geo.size.width / 2)
-                    }
-                    SpineShadow()
-                } else {
-                    ScrollView {
-                        VStack(spacing: 0) {
-                            formPage
-                            verdictPage
-                        }
-                    }
-                    .scrollDismissesKeyboard(.interactively)
+        // Open or closed is decided by the root view and passed in. Deciding
+        // it here from the available size made the layout flip, and the notes
+        // field lose focus, the moment the keyboard appeared.
+        ZStack {
+            PaperBackground()
+            if isOpen {
+                BookSpread {
+                    formPage
+                } right: {
+                    verdictPage
                 }
+            } else {
+                ScrollView {
+                    VStack(spacing: 0) {
+                        formPage
+                        verdictPage
+                    }
+                }
+                .scrollDismissesKeyboard(.interactively)
             }
+        }
+        .sheet(item: $viewing) { photo in
+            PhotoViewer(name: photo.name)
         }
     }
 
@@ -82,6 +94,7 @@ struct StampEditor: View {
             }
 
             notesField
+            photosField
         } footer: {
             VStack(alignment: .leading, spacing: 2) {
                 Text(Formats.mrz(["P", park.name, drink.name]))
@@ -119,6 +132,67 @@ struct StampEditor: View {
         }
     }
 
+    private var photosField: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            HStack {
+                fieldLabel(photos.isEmpty ? "PHOTOS" : "PHOTOS · \(photos.count)")
+                Spacer()
+                PhotosPicker(selection: $pickerItems, matching: .images) {
+                    HStack(spacing: 6) {
+                        Image(systemName: "plus")
+                        Text("ADD PHOTOS")
+                    }
+                    .font(Theme.mono(12, weight: .medium))
+                    .tracking(1.2)
+                    .foregroundStyle(Theme.cover)
+                    .frame(minHeight: 44)
+                    .contentShape(Rectangle())
+                }
+            }
+            if !photos.isEmpty {
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack(spacing: 10) {
+                        ForEach(photos, id: \.self) { name in
+                            PhotoThumb(
+                                name: name,
+                                onOpen: { viewing = PhotoRef(name: name) },
+                                onRemove: { removePhoto(name) }
+                            )
+                        }
+                    }
+                }
+            }
+        }
+        .onChange(of: pickerItems) { _, items in
+            guard !items.isEmpty else { return }
+            pickerItems = []
+            Task {
+                for item in items {
+                    if let data = try? await item.loadTransferable(type: Data.self),
+                       let name = PhotoStore.save(data) {
+                        photos.append(name)
+                        addedPhotos.append(name)
+                    }
+                }
+            }
+        }
+    }
+
+    private func removePhoto(_ name: String) {
+        photos.removeAll { $0 == name }
+        if addedPhotos.contains(name) {
+            addedPhotos.removeAll { $0 == name }
+            PhotoStore.delete(name)
+        } else {
+            removedPhotos.append(name)
+        }
+    }
+
+    private func discardNewPhotos() {
+        addedPhotos.forEach { PhotoStore.delete($0) }
+        addedPhotos = []
+    }
+
     private func fieldLabel(_ text: String) -> some View {
         Text(text)
             .font(Theme.mono(11))
@@ -150,11 +224,13 @@ struct StampEditor: View {
         } footer: {
             HStack {
                 Button("CANCEL") {
+                    discardNewPhotos()
                     dismiss()
                 }
                 .buttonStyle(LinkButtonStyle())
                 if isExisting {
                     Button("REMOVE STAMP") {
+                        discardNewPhotos()
                         store.removeStamp(for: drink, in: park)
                         dismiss()
                     }
@@ -225,9 +301,11 @@ struct StampEditor: View {
         let stamp = Stamp(
             verdict: verdict,
             date: date,
-            notes: notes.trimmingCharacters(in: .whitespacesAndNewlines)
+            notes: notes.trimmingCharacters(in: .whitespacesAndNewlines),
+            photos: photos
         )
         store.saveStamp(stamp, for: drink, in: park, rank: rank)
+        removedPhotos.forEach { PhotoStore.delete($0) }
         notesFocused = false
         UIImpactFeedbackGenerator(style: .heavy).impactOccurred()
         withAnimation(.spring(response: 0.28, dampingFraction: 0.5)) {

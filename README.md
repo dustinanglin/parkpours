@@ -9,9 +9,15 @@ left page and the stamps on the right.
 
 ## Layout
 
-- **Two-page spread** when the window is at least 700 x 500 points (the open Duo).
+- **Two-page spread** when the window is at least 700 points on its long side
+  and 500 on its short side (the open Duo, which reports 951 x 669). The app
+  asks for landscape while open.
 - **Cover + one page at a time** on anything smaller: the Duo's cover screen
-  or a regular iPhone. Swipe between the checklist and the stamps.
+  or a regular iPhone. The app asks for portrait while closed.
+
+Either way the passport is a book: swipe to turn the page. The first pages are
+the park list and the rankings, then "all stamps", one page per park that has
+a stamp. Tapping a park opens its checklist and stamps.
 
 The rule lives in `BookLayout.isOpen` in `ParkPours/Theme/Theme.swift`.
 
@@ -68,8 +74,8 @@ are too.
 
 ## Not in this prototype yet
 
-- Drink photos
+- Taking a drink photo with the camera from inside the app (photos are added
+  from the library and stored on the device)
 - Bundled fonts (system serif, mono and condensed stand in for the mockup's)
-- Page-turn animation
 - The starter drink list in `SeedData.swift` is sample content written from
   memory, not checked against current menus

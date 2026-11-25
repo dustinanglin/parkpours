@@ -4,6 +4,9 @@ import SwiftUI
 struct StampsPage: View {
     @EnvironmentObject private var store: PassportStore
     let park: Park
+    /// True in the "all stamps" section, where the page needs its own heading.
+    var showsTitle = false
+    var onOpenPark: (() -> Void)? = nil
     let onSelect: (Drink) -> Void
 
     private let columns = [
@@ -20,7 +23,13 @@ struct StampsPage: View {
     }
 
     var body: some View {
-        PageScaffold(leading: "ENTRIES · ENTRÉES", trailing: park.name.uppercased()) {
+        PageScaffold(
+            leading: showsTitle ? "ALL STAMPS" : "ENTRIES · ENTRÉES",
+            trailing: showsTitle ? park.resort.uppercased() : park.name.uppercased()
+        ) {
+            if showsTitle {
+                title
+            }
             if park.drinks.isEmpty {
                 Text("No drinks listed for this park yet. Add one from the checklist page.")
                     .font(Theme.mono(13))
@@ -63,6 +72,27 @@ struct StampsPage: View {
             }
             .frame(minHeight: 44)
         }
+    }
+
+    private var title: some View {
+        Button {
+            onOpenPark?()
+        } label: {
+            VStack(alignment: .leading, spacing: 4) {
+                Text(park.name.uppercased())
+                    .font(Theme.serif(26, weight: .bold))
+                    .tracking(1.2)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.6)
+                    .foregroundStyle(Theme.ink)
+                Text("\(entries.count) of \(park.drinks.count) stamped · OPEN CHECKLIST ›")
+                    .font(Theme.mono(11))
+                    .foregroundStyle(Theme.muted)
+            }
+            .frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
     }
 
     private var placeholder: some View {
