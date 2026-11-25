@@ -103,7 +103,18 @@ struct BookPager: UIViewControllerRepresentable {
             let current = controller.viewControllers ?? []
             let same = wanted.count == current.count && zip(wanted, current).allSatisfy { $0 === $1 }
             if !same, wanted.count == (parent.isOpen ? 2 : 1) {
-                controller.setViewControllers(wanted, direction: .forward, animated: false)
+                // A change of page asked for in code (opening the cover,
+                // "close book") turns the page like a swipe would. A refresh
+                // of the same spread, or the first display, does not animate.
+                let showing = current.first.flatMap { self.position(of: $0) }
+                let target = wanted.first.flatMap { self.position(of: $0) }
+                var animated = false
+                var direction = UIPageViewController.NavigationDirection.forward
+                if let showing, let target, showing != target, controller.view.window != nil {
+                    animated = true
+                    direction = target > showing ? .forward : .reverse
+                }
+                controller.setViewControllers(wanted, direction: direction, animated: animated)
             }
         }
 

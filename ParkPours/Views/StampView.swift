@@ -142,3 +142,28 @@ struct StampView: View {
         }
     }
 }
+
+/// A stamp scaled to fit the space it is given, with room for its tilt, so it
+/// is never clipped on a narrow page. `maxScale` lets the editor show it large.
+struct FittedStamp: View {
+    let drink: Drink
+    let stamp: Stamp
+    var maxScale: CGFloat = 1
+
+    /// The largest stamp shape plus the corners it swings out when tilted.
+    static let designSize = CGSize(width: 200, height: 160)
+
+    var body: some View {
+        GeometryReader { geo in
+            let scale = min(
+                maxScale,
+                geo.size.width / Self.designSize.width,
+                geo.size.height / Self.designSize.height
+            )
+            StampView(drink: drink, stamp: stamp)
+                .fixedSize()
+                .scaleEffect(scale)
+                .frame(width: geo.size.width, height: geo.size.height)
+        }
+    }
+}

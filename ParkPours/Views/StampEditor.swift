@@ -217,10 +217,9 @@ struct StampEditor: View {
             verdictGrid
             rankRow
 
-            StampView(drink: drink, stamp: previewStamp)
-                .scaleEffect(stamped ? 1.3 : 1.55)
+            FittedStamp(drink: drink, stamp: previewStamp, maxScale: stamped ? 1.3 : 1.55)
                 .opacity(stamped ? 1 : 0.35)
-                .frame(maxWidth: .infinity, minHeight: 200, maxHeight: .infinity)
+                .frame(maxWidth: .infinity, minHeight: 240, maxHeight: .infinity)
         } footer: {
             HStack {
                 Button("CANCEL") {

@@ -42,8 +42,11 @@ struct StampsPage: View {
                             Button {
                                 onSelect(entry.drink)
                             } label: {
-                                StampView(drink: entry.drink, stamp: entry.stamp)
-                                    .frame(maxWidth: .infinity, minHeight: 156)
+                                FittedStamp(drink: entry.drink, stamp: entry.stamp)
+                                    .aspectRatio(
+                                        FittedStamp.designSize.width / FittedStamp.designSize.height,
+                                        contentMode: .fit
+                                    )
                                     .contentShape(Rectangle())
                             }
                             .buttonStyle(.plain)
@@ -102,11 +105,19 @@ struct StampsPage: View {
         }
         .font(Theme.mono(11))
         .foregroundStyle(Theme.muted)
-        .frame(width: 150, height: 96)
+        .lineLimit(1)
+        .minimumScaleFactor(0.7)
+        .padding(.horizontal, 6)
+        .frame(maxWidth: 150)
+        .frame(height: 96)
         .overlay {
             Rectangle()
                 .strokeBorder(Theme.muted, style: StrokeStyle(lineWidth: 1.5, dash: [4, 3]))
         }
-        .frame(maxWidth: .infinity, minHeight: 156)
+        .frame(maxWidth: .infinity)
+        .aspectRatio(
+            FittedStamp.designSize.width / FittedStamp.designSize.height,
+            contentMode: .fit
+        )
     }
 }
