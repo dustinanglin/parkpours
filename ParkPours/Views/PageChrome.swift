@@ -81,6 +81,11 @@ struct PageScaffold<Content: View, Footer: View>: View {
             .tracking(1.3)
             .lineLimit(1)
             .foregroundStyle(Theme.muted)
+            .contentShape(Rectangle())
+            .onLongPressGesture {
+                // Same as a shake: start a bug report.
+                NotificationCenter.default.post(name: .feedbackRequested, object: nil)
+            }
 
             content
 
