@@ -13,8 +13,8 @@ struct RootView: View {
     @State private var editTarget: EditTarget?
 
     var body: some View {
-        GeometryReader { geo in
-            let isOpen = BookLayout.isOpen(BookLayout.windowSize(geo))
+        // The keyboard must not change the open/closed decision here.
+        FoldAwareContainer(ignoresKeyboard: true) { isOpen in
             ZStack {
                 PaperBackground()
                 BookPager(
@@ -31,10 +31,8 @@ struct RootView: View {
             .fullScreenCover(item: $editTarget) { target in
                 editor(for: target, isOpen: isOpen)
             }
-            .feedbackReporter(isActive: editTarget == nil)
         }
-        // The keyboard must not change the open/closed decision.
-        .ignoresSafeArea(.keyboard)
+        .feedbackReporter(isActive: editTarget == nil)
     }
 
     // MARK: Pages
@@ -145,14 +143,18 @@ struct RootView: View {
 
     private func editor(for target: EditTarget, isOpen: Bool) -> some View {
         let park = store.park(target.park.id) ?? target.park
-        return StampEditor(
-            park: park,
-            drink: target.drink,
-            existing: store.stamp(for: target.drink),
-            existingRank: store.rank(of: target.drink, in: park),
-            stampedCount: store.stampedCount(in: park),
-            isOpen: isOpen
-        )
+        // Open, the editor's pages ignore the keyboard themselves; closed, it
+        // scrolls and needs the keyboard to push its content up.
+        return FoldAwareContainer(ignoresKeyboard: isOpen) { editorOpen in
+            StampEditor(
+                park: park,
+                drink: target.drink,
+                existing: store.stamp(for: target.drink),
+                existingRank: store.rank(of: target.drink, in: park),
+                stampedCount: store.stampedCount(in: park),
+                isOpen: editorOpen
+            )
+        }
         .environmentObject(store)
         .preferredColorScheme(.light)
         .feedbackReporter()

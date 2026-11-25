@@ -18,6 +18,11 @@ The app only supports the upright (portrait) orientation. On the Duo that is
 the right one in both states: closed it is the tall cover screen, and open it
 is the wide inner screen with the fold as the spine.
 
+The Duo's inner screen rotates apps anyway. When that happens the app turns
+its own pages back (`FoldAwareContainer`), so the spread stays fixed to the
+device with the fold as the spine. System pieces such as the keyboard and the
+bug-report sheet still follow the screen's rotation.
+
 Either way the passport is a book: swipe to turn the page. Closed, the cover
 is the first page, so a swipe opens it. Then come the park list and the
 rankings, then "all stamps", one page per park that has

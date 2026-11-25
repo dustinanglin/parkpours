@@ -48,17 +48,22 @@ struct BookPager: UIViewControllerRepresentable {
         for recognizer in controller.gestureRecognizers where recognizer is UITapGestureRecognizer {
             recognizer.isEnabled = false
         }
+        context.coordinator.manualInsets = context.environment.heldInsets
         context.coordinator.sync(controller)
         return controller
     }
 
     func updateUIViewController(_ controller: UIPageViewController, context: Context) {
         context.coordinator.parent = self
+        context.coordinator.manualInsets = context.environment.heldInsets
         context.coordinator.sync(controller)
     }
 
     final class Coordinator: NSObject, UIPageViewControllerDataSource, UIPageViewControllerDelegate {
         var parent: BookPager
+        /// Set while the book is held against a rotation: the system's safe
+        /// areas are on the wrong edges then, so pages are padded by hand.
+        var manualInsets: EdgeInsets?
         private var hosts: [String: UIHostingController<AnyView>] = [:]
 
         init(_ parent: BookPager) {
@@ -71,10 +76,24 @@ struct BookPager: UIViewControllerRepresentable {
             if let existing = hosts[page.id] {
                 return existing
             }
-            let host = UIHostingController(rootView: page.view)
+            let host = UIHostingController(rootView: content(for: page, at: position))
+            host.safeAreaRegions = manualInsets == nil ? .all : []
             host.view.backgroundColor = UIColor(Theme.paper)
             hosts[page.id] = host
             return host
+        }
+
+        private func content(for page: BookPage, at position: Int) -> AnyView {
+            guard let insets = manualInsets else { return page.view }
+            // Open, only the outer edge of each page meets the screen edge.
+            let isLeft = position % 2 == 0
+            let padding = EdgeInsets(
+                top: insets.top,
+                leading: (!parent.isOpen || isLeft) ? insets.leading : 0,
+                bottom: insets.bottom,
+                trailing: (!parent.isOpen || !isLeft) ? insets.trailing : 0
+            )
+            return AnyView(page.view.padding(padding))
         }
 
         private func position(of controller: UIViewController) -> Int? {
@@ -94,8 +113,10 @@ struct BookPager: UIViewControllerRepresentable {
         func sync(_ controller: UIPageViewController) {
             let ids = Set(parent.pages.map { $0.id })
             hosts = hosts.filter { ids.contains($0.key) }
-            for page in parent.pages {
-                hosts[page.id]?.rootView = page.view
+            for (position, page) in parent.pages.enumerated() {
+                guard let host = hosts[page.id] else { continue }
+                host.rootView = content(for: page, at: position)
+                host.safeAreaRegions = manualInsets == nil ? .all : []
             }
 
             let position = min(max(parent.index, 0), parent.pages.count - 1)
@@ -155,6 +176,7 @@ struct BookPager: UIViewControllerRepresentable {
 struct BookSpread<Left: View, Right: View>: View {
     private let left: Left
     private let right: Right
+    @Environment(\.heldInsets) private var heldInsets
 
     init(@ViewBuilder left: () -> Left, @ViewBuilder right: () -> Right) {
         self.left = left()
@@ -163,7 +185,7 @@ struct BookSpread<Left: View, Right: View>: View {
 
     var body: some View {
         GeometryReader { geo in
-            let insets = geo.safeAreaInsets
+            let insets = heldInsets ?? geo.safeAreaInsets
             HStack(spacing: 0) {
                 left
                     .padding(.leading, insets.leading)
@@ -172,6 +194,8 @@ struct BookSpread<Left: View, Right: View>: View {
                     .padding(.trailing, insets.trailing)
                     .frame(width: geo.size.width / 2)
             }
+            .padding(.top, heldInsets?.top ?? 0)
+            .padding(.bottom, heldInsets?.bottom ?? 0)
         }
         .ignoresSafeArea(.container, edges: .horizontal)
         .ignoresSafeArea(.keyboard)
