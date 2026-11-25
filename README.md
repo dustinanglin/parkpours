@@ -18,8 +18,9 @@ The app only supports the upright (portrait) orientation. On the Duo that is
 the right one in both states: closed it is the tall cover screen, and open it
 is the wide inner screen with the fold as the spine.
 
-Either way the passport is a book: swipe to turn the page. The first pages are
-the park list and the rankings, then "all stamps", one page per park that has
+Either way the passport is a book: swipe to turn the page. Closed, the cover
+is the first page, so a swipe opens it. Then come the park list and the
+rankings, then "all stamps", one page per park that has
 a stamp. Tapping a park opens its checklist and stamps.
 
 The rule lives in `BookLayout.isOpen` in `ParkPours/Theme/Theme.swift`.

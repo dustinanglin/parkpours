@@ -16,20 +16,16 @@ struct RootView: View {
         GeometryReader { geo in
             let isOpen = BookLayout.isOpen(BookLayout.windowSize(geo))
             ZStack {
-                if !isOpen && showCover {
-                    CoverView(
-                        stampCount: store.totalStamps,
-                        onOpen: openBook,
-                        onStamp: openToLastPark
-                    )
-                } else {
-                    PaperBackground()
-                    BookPager(pages: pages(compact: !isOpen), isOpen: isOpen, index: $pageIndex)
-                        .id(pagerID(isOpen: isOpen))
-                        .ignoresSafeArea()
-                    if isOpen {
-                        SpineShadow()
-                    }
+                PaperBackground()
+                BookPager(
+                    pages: pages(compact: !isOpen),
+                    isOpen: isOpen,
+                    index: pagerIndex(compact: !isOpen)
+                )
+                .id(pagerID(isOpen: isOpen))
+                .ignoresSafeArea()
+                if isOpen {
+                    SpineShadow()
                 }
             }
             .fullScreenCover(item: $editTarget) { target in
@@ -54,8 +50,34 @@ struct RootView: View {
         }
     }
 
+    private var currentPark: Park? {
+        if case .park(let id) = spread {
+            return store.park(id)
+        }
+        return nil
+    }
+
+    /// Closed, the cover is the first page of the index book, so it opens
+    /// with the same page turn as everything else. `pageIndex` counts from
+    /// the park list either way; this shifts it by one when the cover is there.
+    private func pagerIndex(compact: Bool) -> Binding<Int> {
+        guard compact, currentPark == nil else { return $pageIndex }
+        return Binding(
+            get: { showCover ? 0 : pageIndex + 1 },
+            set: { position in
+                if position <= 0 {
+                    showCover = true
+                } else {
+                    showCover = false
+                    pageIndex = position - 1
+                }
+            }
+        )
+    }
+
     private func pages(compact: Bool) -> [BookPage] {
-        if case .park(let id) = spread, let park = store.park(id) {
+        if let park = currentPark {
+            let id = park.id
             return [
                 page("checklist-\(id)", ChecklistPage(
                     park: park,
@@ -70,7 +92,17 @@ struct RootView: View {
             ]
         }
 
-        var result = [
+        var result: [BookPage] = []
+        if compact {
+            result.append(BookPage(id: "cover", view: AnyView(
+                CoverView(
+                    stampCount: store.totalStamps,
+                    onOpen: openBook,
+                    onStamp: openToLastPark
+                )
+            )))
+        }
+        result += [
             page("parks", ParksPage(
                 compact: compact,
                 onOpen: { park in go(.park(park.id)) },
@@ -140,16 +172,13 @@ struct RootView: View {
         editTarget = EditTarget(park: park, drink: drink)
     }
 
+    /// Turns the cover. The pager animates the page turn.
     private func openBook() {
-        withAnimation(.easeInOut(duration: 0.3)) {
-            showCover = false
-        }
+        showCover = false
     }
 
     private func closeBook() {
-        withAnimation(.easeInOut(duration: 0.3)) {
-            showCover = true
-        }
+        showCover = true
     }
 
     /// "Stamp a drink" from the cover: jump straight to the last park's checklist.
@@ -157,7 +186,7 @@ struct RootView: View {
         if let park = store.park(lastParkID) ?? store.parks.first {
             go(.park(park.id))
         }
-        openBook()
+        showCover = false
     }
 }
 
