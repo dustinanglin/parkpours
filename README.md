@@ -120,5 +120,5 @@ are too.
 - Taking a drink photo with the camera from inside the app (photos are added
   from the library and stored on the device)
 - Bundled fonts (system serif, mono and condensed stand in for the mockup's)
-- The starter drink list in `SeedData.swift` is sample content written from
-  memory, not checked against current menus
+- The starter drinks in the catalog are sample content written from memory,
+  not from current menus. Correct them in `catalog.json`.
