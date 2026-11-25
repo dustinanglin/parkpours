@@ -35,25 +35,29 @@ struct Drink: Identifiable, Codable, Hashable {
     var area: String
     /// Mocktails and other specialty drinks without alcohol.
     var nonAlcoholic: Bool = false
+    /// Catalog only: no longer served. Hidden unless it was already stamped.
+    var retired: Bool = false
 
     var subtitle: String {
         [venue, area].filter { !$0.isEmpty }.joined(separator: " · ")
     }
 
     private enum CodingKeys: String, CodingKey {
-        case id, name, venue, area, nonAlcoholic
+        case id, name, venue, area, nonAlcoholic, retired
     }
 }
 
 extension Drink {
-    /// Passports saved before the non-alcoholic tag existed have no such key.
+    /// Only `id` and `name` are required, so older passports and a
+    /// hand-edited catalog both load.
     init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         id = try container.decode(String.self, forKey: .id)
         name = try container.decode(String.self, forKey: .name)
-        venue = try container.decode(String.self, forKey: .venue)
-        area = try container.decode(String.self, forKey: .area)
+        venue = try container.decodeIfPresent(String.self, forKey: .venue) ?? ""
+        area = try container.decodeIfPresent(String.self, forKey: .area) ?? ""
         nonAlcoholic = try container.decodeIfPresent(Bool.self, forKey: .nonAlcoholic) ?? false
+        retired = try container.decodeIfPresent(Bool.self, forKey: .retired) ?? false
     }
 }
 
@@ -87,7 +91,18 @@ extension Stamp {
     }
 }
 
-/// Everything the passport persists. `stamps` is keyed by drink id;
+/// The official list of parks and drinks, curated by hand. It ships inside
+/// the app and is refreshed over the air.
+struct Catalog: Codable {
+    /// Goes up by one each time the catalog is published.
+    var version: Int
+    var updated: String
+    var parks: [Park]
+}
+
+/// Everything personal that the passport persists. `parks` holds only what
+/// this person added themselves (their own parks, and their own drinks in any
+/// park); the rest comes from the catalog. `stamps` is keyed by drink id;
 /// `rankings` is keyed by park id and holds drink ids, best first.
 struct PassportData: Codable {
     var parks: [Park]

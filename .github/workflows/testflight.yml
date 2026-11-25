@@ -61,6 +61,18 @@ jobs:
             fi
           done
       - uses: actions/checkout@v4
+      # The catalog is edited on its own branch. Ship the newest copy inside
+      # the app so a first launch with no network still has it.
+      - name: Bundle the latest catalog
+        run: |
+          if git fetch --depth 1 origin catalog \
+            && git show FETCH_HEAD:catalog.json > "$RUNNER_TEMP/catalog.json" \
+            && python3 -m json.tool "$RUNNER_TEMP/catalog.json" > /dev/null; then
+            cp "$RUNNER_TEMP/catalog.json" ParkPours/Resources/catalog.json
+            echo "Bundled the catalog from the catalog branch"
+          else
+            echo "::warning::Could not read the catalog branch; using the copy committed on main"
+          fi
       - uses: maxim-lobanov/setup-xcode@v1
         with:
           xcode-version: latest-stable

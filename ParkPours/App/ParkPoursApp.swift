@@ -10,6 +10,9 @@ struct ParkPoursApp: App {
                 .environmentObject(store)
                 .preferredColorScheme(.light)
                 .tint(Theme.cover)
+                .task {
+                    await store.refreshCatalog()
+                }
         }
     }
 }

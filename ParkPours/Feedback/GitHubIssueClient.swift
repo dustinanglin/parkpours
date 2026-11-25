@@ -120,7 +120,7 @@ struct GitHubIssueClient {
         return "https://raw.githubusercontent.com/\(FeedbackConfig.owner)/\(FeedbackConfig.repo)/\(FeedbackConfig.screenshotBranch)/\(path)"
     }
 
-    private func send(_ method: String, _ path: String, _ payload: [String: Any], step: String) async throws -> [String: Any] {
+    func send(_ method: String, _ path: String, _ payload: [String: Any]?, step: String) async throws -> [String: Any] {
         let base = "https://api.github.com/repos/\(FeedbackConfig.owner)/\(FeedbackConfig.repo)/"
         guard let url = URL(string: base + path) else {
             throw FeedbackError.badResponse
@@ -132,7 +132,10 @@ struct GitHubIssueClient {
         request.setValue("application/vnd.github+json", forHTTPHeaderField: "Accept")
         request.setValue("2022-11-28", forHTTPHeaderField: "X-GitHub-Api-Version")
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        request.httpBody = try JSONSerialization.data(withJSONObject: payload)
+        request.cachePolicy = .reloadIgnoringLocalCacheData
+        if let payload {
+            request.httpBody = try JSONSerialization.data(withJSONObject: payload)
+        }
 
         let (data, response) = try await URLSession.shared.data(for: request)
         guard let http = response as? HTTPURLResponse else {
