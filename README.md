@@ -10,10 +10,13 @@ left page and the stamps on the right.
 ## Layout
 
 - **Two-page spread** when the window is at least 700 points on its long side
-  and 500 on its short side (the open Duo, which reports 951 x 669). The app
-  asks for landscape while open.
+  and 500 on its short side (the open Duo, which reports 951 x 669).
 - **Cover + one page at a time** on anything smaller: the Duo's cover screen
-  or a regular iPhone. The app asks for portrait while closed.
+  or a regular iPhone.
+
+The app only supports the upright (portrait) orientation. On the Duo that is
+the right one in both states: closed it is the tall cover screen, and open it
+is the wide inner screen with the fold as the spine.
 
 Either way the passport is a book: swipe to turn the page. The first pages are
 the park list and the rankings, then "all stamps", one page per park that has
