@@ -59,6 +59,12 @@ One-time setup, all in a browser:
 
 The build number is the workflow run number.
 
+## Non-alcoholic drinks
+
+Mocktails and other specialty drinks can be logged too. Tick "Non-alcoholic"
+on a drink's entry page, or choose "Add as non-alcoholic" when adding one.
+Tagged drinks show a small "Zero proof" mark in the checklist and rankings.
+
 ## Reporting bugs from the app
 
 Shake the phone, or long-press the small running header at the top of any

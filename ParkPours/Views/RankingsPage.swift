@@ -68,9 +68,14 @@ private struct RankingRow: View {
     var body: some View {
         HStack(spacing: 12) {
             VStack(alignment: .leading, spacing: 2) {
-                Text(entry.drink.name)
-                    .font(Theme.serif(15))
-                    .foregroundStyle(Theme.ink)
+                HStack(spacing: 6) {
+                    Text(entry.drink.name)
+                        .font(Theme.serif(15))
+                        .foregroundStyle(Theme.ink)
+                    if entry.drink.nonAlcoholic {
+                        ZeroProofTag()
+                    }
+                }
                 Text(entry.park.name)
                     .font(Theme.mono(11))
                     .foregroundStyle(Theme.muted)

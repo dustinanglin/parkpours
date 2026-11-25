@@ -33,9 +33,27 @@ struct Drink: Identifiable, Codable, Hashable {
     var name: String
     var venue: String
     var area: String
+    /// Mocktails and other specialty drinks without alcohol.
+    var nonAlcoholic: Bool = false
 
     var subtitle: String {
         [venue, area].filter { !$0.isEmpty }.joined(separator: " · ")
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case id, name, venue, area, nonAlcoholic
+    }
+}
+
+extension Drink {
+    /// Passports saved before the non-alcoholic tag existed have no such key.
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        id = try container.decode(String.self, forKey: .id)
+        name = try container.decode(String.self, forKey: .name)
+        venue = try container.decode(String.self, forKey: .venue)
+        area = try container.decode(String.self, forKey: .area)
+        nonAlcoholic = try container.decodeIfPresent(Bool.self, forKey: .nonAlcoholic) ?? false
     }
 }
 

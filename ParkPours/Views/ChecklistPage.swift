@@ -59,6 +59,11 @@ struct ChecklistPage: View {
                 newName = ""
                 newVenue = ""
             }
+            Button("Add as non-alcoholic") {
+                store.addDrink(name: newName, venue: newVenue, nonAlcoholic: true, to: park)
+                newName = ""
+                newVenue = ""
+            }
             Button("Cancel", role: .cancel) {
                 newName = ""
                 newVenue = ""
@@ -106,9 +111,14 @@ private struct DrinkRow: View {
         HStack(spacing: 12) {
             CheckBox(verdict: stamp?.verdict)
             VStack(alignment: .leading, spacing: 2) {
-                Text(drink.name)
-                    .font(Theme.serif(15))
-                    .foregroundStyle(Theme.ink)
+                HStack(spacing: 6) {
+                    Text(drink.name)
+                        .font(Theme.serif(15))
+                        .foregroundStyle(Theme.ink)
+                    if drink.nonAlcoholic {
+                        ZeroProofTag()
+                    }
+                }
                 if !drink.subtitle.isEmpty {
                     Text(drink.subtitle)
                         .font(Theme.mono(11))
