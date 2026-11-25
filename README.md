@@ -49,6 +49,23 @@ One-time setup, all in a browser:
 
 The build number is the workflow run number.
 
+## Reporting bugs from the app
+
+Shake the phone, or long-press the small running header at the top of any
+page, to start a bug report. The app grabs the screen as it was, you add a
+title, and it files a GitHub issue in this repo labelled `in-app-feedback`,
+with the app version, iOS version, device, window size and layout attached.
+
+One-time setup on the device: create a fine-grained personal access token at
+GitHub, Settings, Developer settings, limited to this repository, with
+**Issues** and **Contents** set to read and write. Paste it into the report
+form the first time; it is kept in the device's Keychain, not in the repo.
+
+Screenshots are committed to the `feedback-screenshots` branch and linked from
+the issue, because GitHub's API cannot attach images to issues. That is why
+the token needs Contents access. The repo is public, so issues and screenshots
+are too.
+
 ## Not in this prototype yet
 
 - Drink photos

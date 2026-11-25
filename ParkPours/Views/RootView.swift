@@ -45,6 +45,7 @@ struct RootView: View {
         .fullScreenCover(item: $editTarget) { target in
             editor(for: target)
         }
+        .feedbackReporter(isActive: editTarget == nil)
     }
 
     // MARK: Pages
@@ -96,6 +97,7 @@ struct RootView: View {
         )
         .environmentObject(store)
         .preferredColorScheme(.light)
+        .feedbackReporter()
     }
 
     // MARK: Navigation
