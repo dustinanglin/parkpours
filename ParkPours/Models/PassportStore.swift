@@ -79,7 +79,12 @@ final class PassportStore: ObservableObject {
 
         customDrinkIDs = Set(data.parks.flatMap { $0.drinks.map { $0.id } }).subtracting(catalogDrinkIDs)
         parks = merged
+        Self.summary = "catalog v\(catalog.version) with \(catalogDrinkIDs.count) drinks, "
+            + "\(customDrinkIDs.count) personal drinks, \(data.stamps.count) stamps"
     }
+
+    /// One line describing what is stored, attached to bug reports.
+    private(set) static var summary = "not loaded"
 
     /// Removes personal copies of drinks the catalog has. Returns true if
     /// anything changed.

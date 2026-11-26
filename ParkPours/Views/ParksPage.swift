@@ -6,9 +6,7 @@ struct ParksPage: View {
     let compact: Bool
     let onOpen: (Park) -> Void
     let onClose: (() -> Void)?
-
-    @State private var showAdd = false
-    @State private var newName = ""
+    let onAddPark: () -> Void
 
     var body: some View {
         PageScaffold(leading: "PASSPORT", trailing: "\(store.totalStamps) STAMPED") {
@@ -45,22 +43,10 @@ struct ParksPage: View {
                 }
             }
         }
-        .alert("Add a park", isPresented: $showAdd) {
-            TextField("Park name", text: $newName)
-            Button("Add") {
-                store.addPark(name: newName)
-                newName = ""
-            }
-            Button("Cancel", role: .cancel) {
-                newName = ""
-            }
-        }
     }
 
     private var addButton: some View {
-        Button {
-            showAdd = true
-        } label: {
+        Button(action: onAddPark) {
             HStack(spacing: 8) {
                 Image(systemName: "plus")
                 Text("ADD A PARK")

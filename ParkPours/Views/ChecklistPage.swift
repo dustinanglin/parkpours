@@ -8,11 +8,8 @@ struct ChecklistPage: View {
     let compact: Bool
     let onSelect: (Drink) -> Void
     let onIndex: () -> Void
-
-    @State private var showAdd = false
-    @State private var showScan = false
-    @State private var newName = ""
-    @State private var newVenue = ""
+    let onAdd: () -> Void
+    let onScan: () -> Void
 
     /// The park as it is now. Read from the store so a drink added from this
     /// page shows up straight away, without waiting for the page to be rebuilt.
@@ -64,30 +61,6 @@ struct ChecklistPage: View {
                 }
             }
         }
-        .sheet(isPresented: $showScan) {
-            MenuScanSheet(park: park)
-                .environmentObject(store)
-                .preferredColorScheme(.light)
-                .tint(Theme.cover)
-        }
-        .alert("Add a drink", isPresented: $showAdd) {
-            TextField("Drink name", text: $newName)
-            TextField("Where you got it", text: $newVenue)
-            Button("Add") {
-                store.addDrink(name: newName, venue: newVenue, to: park)
-                newName = ""
-                newVenue = ""
-            }
-            Button("Add as non-alcoholic") {
-                store.addDrink(name: newName, venue: newVenue, nonAlcoholic: true, to: park)
-                newName = ""
-                newVenue = ""
-            }
-            Button("Cancel", role: .cancel) {
-                newName = ""
-                newVenue = ""
-            }
-        }
     }
 
     private var heading: some View {
@@ -109,9 +82,7 @@ struct ChecklistPage: View {
     }
 
     private var addButton: some View {
-        Button {
-            showAdd = true
-        } label: {
+        Button(action: onAdd) {
             HStack(spacing: 8) {
                 Image(systemName: "plus")
                 Text("ADD A DRINK")
@@ -122,9 +93,7 @@ struct ChecklistPage: View {
     }
 
     private var scanButton: some View {
-        Button {
-            showScan = true
-        } label: {
+        Button(action: onScan) {
             HStack(spacing: 8) {
                 Image(systemName: "text.viewfinder")
                 Text("SCAN A DRINK")
