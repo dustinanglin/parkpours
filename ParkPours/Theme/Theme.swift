@@ -114,6 +114,8 @@ struct PrimaryLabel: View {
         .foregroundStyle(Theme.cream)
         .padding(.horizontal, 20)
         .frame(minHeight: 44)
-        .background(Theme.cover)
+        // Kept inside its own frame; by default a colour background bleeds
+        // out to the screen edge when it is near one.
+        .background(Theme.cover, ignoresSafeAreaEdges: [])
     }
 }

@@ -38,9 +38,6 @@ struct StampEditor: View {
     @State private var editMode: DrinkEditMode?
     @State private var published = false
     @State private var deleted = false
-    @State private var confirmDiscard = false
-    /// How far the editor is being pulled down, while a finger is on it.
-    @GestureState private var pull: CGFloat = 0
     @FocusState private var notesFocused: Bool
 
     init(park: Park, drink: Drink, existing: Stamp?, existingRank: Int?, stampedCount: Int, isOpen: Bool) {
@@ -70,48 +67,21 @@ struct StampEditor: View {
         // field lose focus, the moment the keyboard appeared.
         ZStack {
             PaperBackground()
-            VStack(spacing: 0) {
-                closeHandle
-                if isOpen {
-                    BookSpread {
+            if isOpen {
+                BookSpread {
+                    formPage
+                } right: {
+                    verdictPage
+                }
+            } else {
+                ScrollView {
+                    VStack(spacing: 0) {
                         formPage
-                    } right: {
                         verdictPage
                     }
-                    // Nothing scrolls here, so a pull anywhere closes it.
-                    .simultaneousGesture(pullToClose)
-                } else {
-                    ScrollView {
-                        VStack(spacing: 0) {
-                            formPage
-                            verdictPage
-                        }
-                        .background {
-                            GeometryReader { geo in
-                                Color.clear.preference(
-                                    key: ScrollTopKey.self,
-                                    value: geo.frame(in: .named(Self.scrollSpace)).minY
-                                )
-                            }
-                        }
-                    }
-                    .coordinateSpace(name: Self.scrollSpace)
-                    .scrollDismissesKeyboard(.interactively)
-                    // Already at the top and still pulling down: close.
-                    .onPreferenceChange(ScrollTopKey.self) { top in
-                        if top > 110, !notesFocused {
-                            requestClose()
-                        }
-                    }
                 }
+                .scrollDismissesKeyboard(.interactively)
             }
-        }
-        .offset(y: pull)
-        .confirmationDialog("Discard your changes?", isPresented: $confirmDiscard, titleVisibility: .visible) {
-            Button("Discard changes", role: .destructive) {
-                close()
-            }
-            Button("Keep editing", role: .cancel) {}
         }
         .sheet(item: $viewing) { photo in
             PhotoViewer(name: photo.name)
@@ -142,49 +112,12 @@ struct StampEditor: View {
         }
     }
 
-    // MARK: Closing
+    // MARK: Button states
 
-    private static let scrollSpace = "stamp-editor-scroll"
-
-    /// A grab handle across the top. Pull it down, or tap it, to go back.
-    private var closeHandle: some View {
-        Button(action: requestClose) {
-            Capsule()
-                .fill(Theme.rule)
-                .frame(width: 44, height: 5)
-                .frame(maxWidth: .infinity, minHeight: 44)
-                .contentShape(Rectangle())
-        }
-        .buttonStyle(.plain)
-        .simultaneousGesture(pullToClose)
-        .accessibilityLabel("Close")
-        .accessibilityHint("Goes back without stamping")
-    }
-
-    /// The editor follows the finger down, and closes if pulled far enough.
-    private var pullToClose: some Gesture {
-        DragGesture(minimumDistance: 16)
-            .updating($pull) { value, state, _ in
-                let down = value.translation.height
-                // Mostly-downward drags only, so sideways swipes are ignored.
-                if down > 0, down > abs(value.translation.width) * 1.5 {
-                    state = down
-                }
-            }
-            .onEnded { value in
-                let down = value.translation.height
-                guard down > abs(value.translation.width) * 1.5 else { return }
-                if down > 120 || value.predictedEndTranslation.height > 320 {
-                    requestClose()
-                }
-            }
-    }
-
+    /// True once something about the stamp differs from what was saved.
+    /// A new stamp has nothing saved, so it never counts as changed.
     private var hasChanges: Bool {
-        guard let existing else {
-            // A new stamp: only notes or photos are worth asking about.
-            return !notes.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || !photos.isEmpty
-        }
+        guard let existing else { return false }
         return verdict != existing.verdict
             || date != existing.date
             || notes != existing.notes
@@ -192,19 +125,21 @@ struct StampEditor: View {
             || rank != initialRank
     }
 
-    /// Closes without saving, asking first if there is something to lose.
-    private func requestClose() {
-        guard !stamped, !confirmDiscard else { return }
-        if hasChanges {
-            confirmDiscard = true
-        } else {
-            close()
-        }
+    /// "Close" when looking at a saved stamp, "Cancel" once there is
+    /// something to throw away (or for a stamp that does not exist yet).
+    private var dismissTitle: String {
+        isExisting && !hasChanges ? "CLOSE" : "CANCEL"
     }
 
-    private func close() {
-        discardNewPhotos()
-        dismiss()
+    /// New stamp: "Stamp it". Saved and untouched: "Stamped", inactive.
+    /// Saved and edited: "Re-stamp it".
+    private var stampTitle: String {
+        guard isExisting else { return "STAMP IT" }
+        return hasChanges ? "RE-STAMP IT" : "STAMPED"
+    }
+
+    private var canStamp: Bool {
+        !stamped && (!isExisting || hasChanges)
     }
 
     // MARK: Left page
@@ -447,7 +382,7 @@ struct StampEditor: View {
                 .frame(maxWidth: .infinity, minHeight: 240, maxHeight: .infinity)
         } footer: {
             HStack {
-                Button("CANCEL") {
+                Button(dismissTitle) {
                     discardNewPhotos()
                     dismiss()
                 }
@@ -463,10 +398,11 @@ struct StampEditor: View {
                 }
                 Spacer()
                 Button(action: commit) {
-                    PrimaryLabel(title: "STAMP IT")
+                    PrimaryLabel(title: stampTitle)
                 }
                 .buttonStyle(.plain)
-                .disabled(stamped)
+                .disabled(!canStamp)
+                .opacity(isExisting && !hasChanges && !stamped ? 0.45 : 1)
             }
         }
     }
@@ -553,7 +489,9 @@ private struct VerdictButton: View {
                 .tracking(1.3)
                 .foregroundStyle(selected ? Theme.paper : option.ink)
                 .frame(maxWidth: .infinity, minHeight: 52)
-                .background(selected ? option.ink : Color.clear)
+                // Kept inside its own frame; by default a colour background
+                // bleeds out to the screen edge when it is near one.
+                .background(selected ? option.ink : Color.clear, ignoresSafeAreaEdges: [])
                 .overlay {
                     Rectangle().strokeBorder(option.ink, lineWidth: 2)
                 }
@@ -561,13 +499,5 @@ private struct VerdictButton: View {
         }
         .buttonStyle(.plain)
         .accessibilityAddTraits(selected ? .isSelected : [])
-    }
-}
-
-private struct ScrollTopKey: PreferenceKey {
-    static let defaultValue: CGFloat = 0
-
-    static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) {
-        value = nextValue()
     }
 }
