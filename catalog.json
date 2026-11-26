@@ -1,129 +1,188 @@
 {
-  "version": 1,
-  "updated": "2026-11-25",
-  "parks": [
+  "parks" : [
     {
-      "id": "epcot",
-      "name": "EPCOT",
-      "resort": "Walt Disney World",
-      "drinks": [
+      "drinks" : [
         {
-          "id": "epcot-avocado-margarita",
-          "name": "La Cava Avocado Margarita",
-          "venue": "La Cava del Tequila",
-          "area": "Mexico"
+          "area" : "Mexico",
+          "description" : "",
+          "id" : "epcot-avocado-margarita",
+          "name" : "La Cava Avocado Margarita",
+          "nonAlcoholic" : false,
+          "retired" : false,
+          "venue" : "La Cava del Tequila"
         },
         {
-          "id": "epcot-orange-slush",
-          "name": "Grand Marnier Orange Slush",
-          "venue": "Les Vins des Chefs de France",
-          "area": "France"
+          "area" : "France",
+          "description" : "",
+          "id" : "epcot-orange-slush",
+          "name" : "Grand Marnier Orange Slush",
+          "nonAlcoholic" : false,
+          "retired" : false,
+          "venue" : "Les Vins des Chefs de France"
         },
         {
-          "id": "epcot-leaping-leprechaun",
-          "name": "Leaping Leprechaun",
-          "venue": "Rose & Crown Pub",
-          "area": "United Kingdom"
+          "area" : "United Kingdom",
+          "description" : "",
+          "id" : "epcot-leaping-leprechaun",
+          "name" : "Leaping Leprechaun",
+          "nonAlcoholic" : false,
+          "retired" : false,
+          "venue" : "Rose & Crown Pub"
         },
         {
-          "id": "epcot-violet-sake",
-          "name": "Violet Sake",
-          "venue": "Kabuki Cafe",
-          "area": "Japan"
+          "area" : "Japan",
+          "description" : "",
+          "id" : "epcot-violet-sake",
+          "name" : "Violet Sake",
+          "nonAlcoholic" : false,
+          "retired" : false,
+          "venue" : "Kabuki Cafe"
         },
         {
-          "id": "epcot-tipsy-ducks",
-          "name": "Tipsy Ducks in Love",
-          "venue": "Joy of Tea",
-          "area": "China"
+          "area" : "China",
+          "description" : "",
+          "id" : "epcot-tipsy-ducks",
+          "name" : "Tipsy Ducks in Love",
+          "nonAlcoholic" : false,
+          "retired" : false,
+          "venue" : "Joy of Tea"
         },
         {
-          "id": "epcot-viking-coffee",
-          "name": "Viking Coffee",
-          "venue": "Kringla Bakeri og Kafe",
-          "area": "Norway"
+          "area" : "Norway",
+          "description" : "",
+          "id" : "epcot-viking-coffee",
+          "name" : "Viking Coffee",
+          "nonAlcoholic" : false,
+          "retired" : false,
+          "venue" : "Kringla Bakeri og Kafe"
         },
         {
-          "id": "epcot-grapefruit-hefeweizen",
-          "name": "Grapefruit Hefeweizen",
-          "venue": "Sommerfest",
-          "area": "Germany"
+          "area" : "Germany",
+          "description" : "",
+          "id" : "epcot-grapefruit-hefeweizen",
+          "name" : "Grapefruit Hefeweizen",
+          "nonAlcoholic" : false,
+          "retired" : false,
+          "venue" : "Sommerfest"
         }
-      ]
+      ],
+      "id" : "epcot",
+      "name" : "EPCOT",
+      "resort" : "Walt Disney World"
     },
     {
-      "id": "hollywood-studios",
-      "name": "Hollywood Studios",
-      "resort": "Walt Disney World",
-      "drinks": [
+      "drinks" : [
         {
-          "id": "dhs-fuzzy-tauntaun",
-          "name": "Fuzzy Tauntaun",
-          "venue": "Oga's Cantina",
-          "area": "Galaxy's Edge"
+          "area" : "Galaxy's Edge",
+          "description" : "",
+          "id" : "dhs-fuzzy-tauntaun",
+          "name" : "Fuzzy Tauntaun",
+          "nonAlcoholic" : false,
+          "retired" : false,
+          "venue" : "Oga's Cantina"
         },
         {
-          "id": "dhs-jedi-mind-trick",
-          "name": "Jedi Mind Trick",
-          "venue": "Oga's Cantina",
-          "area": "Galaxy's Edge"
+          "area" : "Galaxy's Edge",
+          "description" : "",
+          "id" : "dhs-jedi-mind-trick",
+          "name" : "Jedi Mind Trick",
+          "nonAlcoholic" : false,
+          "retired" : false,
+          "venue" : "Oga's Cantina"
         },
         {
-          "id": "dhs-outer-rim",
-          "name": "The Outer Rim",
-          "venue": "Oga's Cantina",
-          "area": "Galaxy's Edge"
+          "area" : "Galaxy's Edge",
+          "description" : "",
+          "id" : "dhs-outer-rim",
+          "name" : "The Outer Rim",
+          "nonAlcoholic" : false,
+          "retired" : false,
+          "venue" : "Oga's Cantina"
         },
         {
-          "id": "dhs-california-sunset",
-          "name": "California Sunset",
-          "venue": "BaseLine Tap House",
-          "area": "Grand Avenue"
+          "area" : "Grand Avenue",
+          "description" : "",
+          "id" : "dhs-california-sunset",
+          "name" : "California Sunset",
+          "nonAlcoholic" : false,
+          "retired" : false,
+          "venue" : "BaseLine Tap House"
         },
         {
-          "id": "dhs-grapefruit-cake-martini",
-          "name": "Grapefruit Cake Martini",
-          "venue": "Hollywood Brown Derby Lounge",
-          "area": "Hollywood Boulevard"
+          "area" : "Hollywood Boulevard",
+          "description" : "",
+          "id" : "dhs-grapefruit-cake-martini",
+          "name" : "Grapefruit Cake Martini",
+          "nonAlcoholic" : false,
+          "retired" : false,
+          "venue" : "Hollywood Brown Derby Lounge"
+        },
+        {
+          "area" : "Galaxy’s Edge",
+          "description" : "Joffrey’s cold brew with sweet cream and chocolate puff cereal.",
+          "id" : "998A4612-B74F-4957-B52C-2C1CD22083FA",
+          "name" : "Cold Brew Black Caf",
+          "nonAlcoholic" : true,
+          "retired" : false,
+          "venue" : "Kat Saka’s Kettle"
         }
-      ]
+      ],
+      "id" : "hollywood-studios",
+      "name" : "Hollywood Studios",
+      "resort" : "Walt Disney World"
     },
     {
-      "id": "animal-kingdom",
-      "name": "Animal Kingdom",
-      "resort": "Walt Disney World",
-      "drinks": [
+      "drinks" : [
         {
-          "id": "dak-lost-on-safari",
-          "name": "Lost on Safari",
-          "venue": "Dawa Bar",
-          "area": "Africa"
+          "area" : "Africa",
+          "description" : "",
+          "id" : "dak-lost-on-safari",
+          "name" : "Lost on Safari",
+          "nonAlcoholic" : false,
+          "retired" : false,
+          "venue" : "Dawa Bar"
         },
         {
-          "id": "dak-jenns-tattoo",
-          "name": "Jenn's Tattoo",
-          "venue": "Nomad Lounge",
-          "area": "Discovery Island"
+          "area" : "Discovery Island",
+          "description" : "",
+          "id" : "dak-jenns-tattoo",
+          "name" : "Jenn's Tattoo",
+          "nonAlcoholic" : false,
+          "retired" : false,
+          "venue" : "Nomad Lounge"
         },
         {
-          "id": "dak-tempting-tigress",
-          "name": "Tempting Tigress",
-          "venue": "Nomad Lounge",
-          "area": "Discovery Island"
+          "area" : "Discovery Island",
+          "description" : "",
+          "id" : "dak-tempting-tigress",
+          "name" : "Tempting Tigress",
+          "nonAlcoholic" : false,
+          "retired" : false,
+          "venue" : "Nomad Lounge"
         },
         {
-          "id": "dak-rum-blossom",
-          "name": "Rum Blossom",
-          "venue": "Pongu Pongu",
-          "area": "Pandora"
+          "area" : "Pandora",
+          "description" : "",
+          "id" : "dak-rum-blossom",
+          "name" : "Rum Blossom",
+          "nonAlcoholic" : false,
+          "retired" : false,
+          "venue" : "Pongu Pongu"
         }
-      ]
+      ],
+      "id" : "animal-kingdom",
+      "name" : "Animal Kingdom",
+      "resort" : "Walt Disney World"
     },
     {
-      "id": "magic-kingdom",
-      "name": "Magic Kingdom",
-      "resort": "Walt Disney World",
-      "drinks": []
+      "drinks" : [
+
+      ],
+      "id" : "magic-kingdom",
+      "name" : "Magic Kingdom",
+      "resort" : "Walt Disney World"
     }
-  ]
+  ],
+  "updated" : "2026-11-26",
+  "version" : 2
 }
