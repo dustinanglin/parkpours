@@ -37,6 +37,8 @@ struct Drink: Identifiable, Codable, Hashable {
     var nonAlcoholic: Bool = false
     /// Catalog only: no longer served. Hidden unless it was already stamped.
     var retired: Bool = false
+    /// What is in it, as a menu would describe it. Optional.
+    var details: String = ""
 
     var subtitle: String {
         [venue, area].filter { !$0.isEmpty }.joined(separator: " · ")
@@ -44,6 +46,7 @@ struct Drink: Identifiable, Codable, Hashable {
 
     private enum CodingKeys: String, CodingKey {
         case id, name, venue, area, nonAlcoholic, retired
+        case details = "description"
     }
 }
 
@@ -58,6 +61,7 @@ extension Drink {
         area = try container.decodeIfPresent(String.self, forKey: .area) ?? ""
         nonAlcoholic = try container.decodeIfPresent(Bool.self, forKey: .nonAlcoholic) ?? false
         retired = try container.decodeIfPresent(Bool.self, forKey: .retired) ?? false
+        details = try container.decodeIfPresent(String.self, forKey: .details) ?? ""
     }
 }
 

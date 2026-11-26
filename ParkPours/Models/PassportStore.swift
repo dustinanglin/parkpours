@@ -197,16 +197,17 @@ final class PassportStore: ObservableObject {
 
     /// Adds a personal drink to a park, whether the park is from the catalog
     /// or one this person created.
-    func addDrink(name: String, venue: String, nonAlcoholic: Bool = false, to park: Park) {
+    func addDrink(name: String, venue: String, details: String = "", nonAlcoholic: Bool = false, to park: Park) {
         let trimmed = name.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else { return }
-        let drink = Drink(
+        var drink = Drink(
             id: UUID().uuidString,
             name: trimmed,
             venue: venue.trimmingCharacters(in: .whitespacesAndNewlines),
             area: "",
             nonAlcoholic: nonAlcoholic
         )
+        drink.details = details.trimmingCharacters(in: .whitespacesAndNewlines)
         if let index = data.parks.firstIndex(where: { $0.id == park.id }) {
             data.parks[index].drinks.append(drink)
         } else {
