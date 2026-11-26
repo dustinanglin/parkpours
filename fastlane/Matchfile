@@ -1,0 +1,15 @@
+# Park Pours signs with the same Apple Distribution certificate as Vibecast.
+# A distribution certificate belongs to the team, not to one app, so both
+# apps share the encrypted store in the private vibecast-certs repo. Park
+# Pours only adds its own App Store provisioning profile there.
+storage_mode("git")
+git_url("https://github.com/dustinanglin/vibecast-certs")
+
+type("appstore")
+
+app_identifier([ENV.fetch("BUNDLE_ID", "com.dustinanglin.parkpours")])
+team_id(ENV["APPLE_TEAM_ID"])
+
+# The store was written with the legacy encryption format (see Vibecast's
+# Matchfile). Keep writing in that format so both projects can read it.
+force_legacy_encryption(true)
