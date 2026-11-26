@@ -1,0 +1,82 @@
+default_platform(:ios)
+
+# Signing for Park Pours, using fastlane match.
+#
+# Required environment:
+#   ASC_KEY_ID, ASC_ISSUER_ID   App Store Connect API key identifiers
+#   ASC_KEY_PATH                path to the key's .p8 file
+#   APPLE_TEAM_ID, BUNDLE_ID
+#   MATCH_PASSWORD              passphrase of the vibecast-certs store
+#   MATCH_GIT_BASIC_AUTHORIZATION   access to the vibecast-certs repo
+#
+# The key path is deliberately not called APP_STORE_CONNECT_API_KEY_PATH:
+# match binds that name to its own api_key_path option, which then conflicts
+# with the api_key passed below.
+
+KEYCHAIN_NAME = "parkpours_ci_keychain"
+KEYCHAIN_PASSWORD = "parkpours-ephemeral-keychain"
+
+platform :ios do
+  desc "One-time: create the Park Pours App Store profile in the certs repo"
+  lane :setup_signing do
+    api_key = app_store_connect_api_key(
+      key_id: ENV.fetch("ASC_KEY_ID"),
+      issuer_id: ENV.fetch("ASC_ISSUER_ID"),
+      key_filepath: ENV.fetch("ASC_KEY_PATH"),
+      duration: 1200,
+      in_house: false
+    )
+    create_keychain(
+      name: KEYCHAIN_NAME,
+      password: KEYCHAIN_PASSWORD,
+      default_keychain: true,
+      unlock: true,
+      timeout: 3600,
+      lock_when_sleeps: false
+    )
+    # readonly: false lets match create what is missing. The distribution
+    # certificate already exists in the store, so this only adds a profile.
+    match(
+      type: "appstore",
+      readonly: false,
+      api_key: api_key,
+      keychain_name: KEYCHAIN_NAME,
+      keychain_password: KEYCHAIN_PASSWORD
+    )
+  end
+
+  desc "Every build: install the certificate and profile, read-only"
+  lane :fetch_signing do
+    api_key = app_store_connect_api_key(
+      key_id: ENV.fetch("ASC_KEY_ID"),
+      issuer_id: ENV.fetch("ASC_ISSUER_ID"),
+      key_filepath: ENV.fetch("ASC_KEY_PATH"),
+      duration: 1200,
+      in_house: false
+    )
+    # A keychain this job owns, so codesign never waits on an unlock prompt.
+    create_keychain(
+      name: KEYCHAIN_NAME,
+      password: KEYCHAIN_PASSWORD,
+      default_keychain: true,
+      unlock: true,
+      timeout: 3600,
+      lock_when_sleeps: false
+    )
+    match(
+      type: "appstore",
+      readonly: true,
+      api_key: api_key,
+      keychain_name: KEYCHAIN_NAME,
+      keychain_password: KEYCHAIN_PASSWORD
+    )
+
+    # Hand the installed profile's real name to the xcodebuild steps.
+    bundle_id = ENV.fetch("BUNDLE_ID", "com.dustinanglin.parkpours")
+    profile_name = ENV.fetch("sigh_#{bundle_id}_appstore_profile-name")
+    if ENV["GITHUB_ENV"]
+      File.open(ENV["GITHUB_ENV"], "a") { |file| file.puts("PROFILE_NAME=#{profile_name}") }
+    end
+    UI.success("Signing ready with profile: #{profile_name}")
+  end
+end

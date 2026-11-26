@@ -1,0 +1,59 @@
+name: Set up signing
+
+# Run by hand, once (Actions tab, "Run workflow"), and again only when the
+# distribution certificate or the profile needs renewing. It creates the
+# Park Pours App Store provisioning profile and commits it, encrypted, to the
+# private vibecast-certs repo that Vibecast's signing already lives in.
+#
+# If MATCH_PASSWORD is wrong this fails at the decrypt step, before anything
+# is created or changed.
+
+on:
+  workflow_dispatch:
+
+concurrency:
+  group: signing
+  cancel-in-progress: false
+
+jobs:
+  setup:
+    runs-on: xcode-27
+    timeout-minutes: 20
+    env:
+      ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+      ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+      ASC_PRIVATE_KEY: ${{ secrets.ASC_PRIVATE_KEY }}
+      APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+      BUNDLE_ID: ${{ secrets.BUNDLE_ID }}
+      MATCH_PASSWORD: ${{ secrets.MATCH_PASSWORD }}
+      MATCH_GIT_TOKEN: ${{ secrets.MATCH_GIT_TOKEN }}
+      FASTLANE_DISABLE_COLORS: "1"
+    steps:
+      - name: Check secrets
+        run: |
+          for name in ASC_KEY_ID ASC_ISSUER_ID ASC_PRIVATE_KEY APPLE_TEAM_ID BUNDLE_ID MATCH_PASSWORD MATCH_GIT_TOKEN; do
+            if [ -z "${!name}" ]; then
+              echo "::error::Missing repository secret $name"
+              exit 1
+            fi
+          done
+      - uses: actions/checkout@v4
+      - uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: "3.1"
+          bundler: latest
+          bundler-cache: true
+      - name: Prepare credentials
+        run: |
+          mkdir -p "$RUNNER_TEMP/keys"
+          printf '%s\n' "$ASC_PRIVATE_KEY" > "$RUNNER_TEMP/keys/AuthKey_${ASC_KEY_ID}.p8"
+          echo "ASC_KEY_PATH=$RUNNER_TEMP/keys/AuthKey_${ASC_KEY_ID}.p8" >> "$GITHUB_ENV"
+          # match wants "user:token" base64-encoded; the secret holds the raw token.
+          AUTH=$(printf '%s' "${{ github.repository_owner }}:${MATCH_GIT_TOKEN}" | base64 | tr -d '\n')
+          echo "::add-mask::$AUTH"
+          echo "MATCH_GIT_BASIC_AUTHORIZATION=$AUTH" >> "$GITHUB_ENV"
+      - name: Create the profile
+        run: bundle exec fastlane setup_signing
+      - name: Remove key
+        if: always()
+        run: rm -rf "$RUNNER_TEMP/keys"
