@@ -30,6 +30,7 @@ struct DrinkEditSheet: View {
     @State private var name: String
     @State private var venue: String
     @State private var area: String
+    @State private var details: String
     @State private var nonAlcoholic: Bool
     @State private var retired: Bool
     @State private var isSending = false
@@ -44,6 +45,7 @@ struct DrinkEditSheet: View {
         _name = State(initialValue: drink.name)
         _venue = State(initialValue: drink.venue)
         _area = State(initialValue: drink.area)
+        _details = State(initialValue: drink.details)
         _nonAlcoholic = State(initialValue: drink.nonAlcoholic)
         _retired = State(initialValue: drink.retired)
     }
@@ -82,6 +84,8 @@ struct DrinkEditSheet: View {
                     TextField("Drink name", text: $name)
                     TextField("Bar or restaurant", text: $venue)
                     TextField("Land or area", text: $area)
+                    TextField("Description (optional)", text: $details, axis: .vertical)
+                        .lineLimit(2...6)
                     Toggle("Non-alcoholic", isOn: $nonAlcoholic)
                 } header: {
                     Text(park.name)
@@ -154,6 +158,7 @@ struct DrinkEditSheet: View {
         entry.name = trimmedName
         entry.venue = venue.trimmingCharacters(in: .whitespacesAndNewlines)
         entry.area = area.trimmingCharacters(in: .whitespacesAndNewlines)
+        entry.details = details.trimmingCharacters(in: .whitespacesAndNewlines)
         entry.nonAlcoholic = nonAlcoholic
         entry.retired = mode == .catalog ? retired : false
 

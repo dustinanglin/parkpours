@@ -127,7 +127,7 @@ struct ChecklistPage: View {
         } label: {
             HStack(spacing: 8) {
                 Image(systemName: "text.viewfinder")
-                Text("SCAN A MENU")
+                Text("SCAN A DRINK")
                 Spacer()
             }
         }

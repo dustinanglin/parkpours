@@ -116,6 +116,14 @@ struct StampEditor: View {
                 .lineLimit(2)
                 .minimumScaleFactor(0.7)
 
+            if !drink.details.isEmpty {
+                Text(drink.details)
+                    .font(Theme.mono(12))
+                    .foregroundStyle(Theme.muted)
+                    .lineLimit(4)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+
             HStack(alignment: .top, spacing: 16) {
                 field("VENUE", drink.venue.isEmpty ? "—" : drink.venue)
                 field("AREA", drink.area.isEmpty ? "—" : drink.area)

@@ -77,9 +77,11 @@ Parks and drinks come from two places, merged in the app:
 
 Stamps, notes, photos and rankings are always personal and stay on the phone.
 
-**Scan a menu.** On a park's checklist, "Scan a menu" reads the text off a
-photo of a menu (on the phone, nothing is uploaded) and lets you tick the
-lines that are drinks. They are added as personal drinks.
+**Scan a drink.** On a park's checklist, "Scan a drink" opens a camera with a
+box. Fit one drink's name and description in the box and capture: the first
+line becomes the name and the rest the description, both of which you can
+correct before adding. The text is read on the phone; nothing is uploaded and
+no photo is kept. Scanned drinks are added as personal drinks.
 
 **Editing a drink.** The entry page of a drink you added has "Edit drink":
 change its name, venue, area or non-alcoholic tag, or delete it.
@@ -91,7 +93,8 @@ catalog" on a personal drink lets you tidy it and writes it into
 retires it. A drink keeps its id through all of this, so stamps carry over.
 
 The file can also be edited directly on GitHub. Each drink needs a unique
-`id` and a `name`; `venue`, `area`, `nonAlcoholic` and `retired` are optional.
+`id` and a `name`; `venue`, `area`, `description`, `nonAlcoholic` and `retired`
+are optional.
 Add one to `version` when you edit by hand. To take a drink off the menu, set
 `"retired": true` instead of deleting it, so existing stamps keep their drink.
 
