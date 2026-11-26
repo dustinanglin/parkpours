@@ -126,6 +126,14 @@ jobs:
             -authenticationKeyPath "$RUNNER_TEMP/keys/AuthKey_${ASC_KEY_ID}.p8" \
             -authenticationKeyID "$ASC_KEY_ID" \
             -authenticationKeyIssuerID "$ASC_ISSUER_ID"
+      # Automatic signing makes a new Apple Development certificate on every
+      # run, and Apple caps how many an account can hold. Revoke the one this
+      # run made (matched by serial number) so they do not pile up.
+      - name: Revoke this build's development certificate
+        if: always()
+        run: |
+          ASC_KEY_PATH="$RUNNER_TEMP/keys/AuthKey_${ASC_KEY_ID}.p8" \
+            python3 scripts/revoke_build_certificate.py
       - name: Remove key
         if: always()
         run: rm -rf "$RUNNER_TEMP/keys"

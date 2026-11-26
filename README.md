@@ -64,6 +64,18 @@ One-time setup, all in a browser:
 
 The build number is the workflow run number.
 
+## Signing certificates
+
+Each TestFlight run signs on a clean machine, so Xcode creates a new Apple
+Development certificate every time, and Apple caps how many an account can
+hold. The last step of the job (`scripts/revoke_build_certificate.py`) revokes
+the certificate that run created, matched by serial number. It never touches
+distribution certificates or development certificates made elsewhere.
+
+If a build ever fails with "Your account has reached the maximum number of
+certificates", revoke the Development certificates named "Created via API" in
+the Apple Developer portal and run the workflow again.
+
 ## The catalog
 
 Parks and drinks come from two places, merged in the app:
