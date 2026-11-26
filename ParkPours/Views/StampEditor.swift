@@ -17,6 +17,10 @@ struct StampEditor: View {
     private let isOpen: Bool
     private let isExisting: Bool
     private let maxRank: Int
+    /// The stamp and rank as they were when the editor opened, to tell
+    /// whether anything has been changed.
+    private let existing: Stamp?
+    private let initialRank: Int
 
     @State private var verdict: Verdict
     @State private var date: Date
@@ -34,6 +38,9 @@ struct StampEditor: View {
     @State private var editMode: DrinkEditMode?
     @State private var published = false
     @State private var deleted = false
+    @State private var confirmDiscard = false
+    /// How far the editor is being pulled down, while a finger is on it.
+    @GestureState private var pull: CGFloat = 0
     @FocusState private var notesFocused: Bool
 
     init(park: Park, drink: Drink, existing: Stamp?, existingRank: Int?, stampedCount: Int, isOpen: Bool) {
@@ -49,6 +56,8 @@ struct StampEditor: View {
         _date = State(initialValue: existing?.date ?? Date())
         _notes = State(initialValue: existing?.notes ?? "")
         _rank = State(initialValue: min(existingRank ?? top, top))
+        self.existing = existing
+        self.initialRank = min(existingRank ?? top, top)
     }
 
     private var previewStamp: Stamp {
@@ -61,21 +70,48 @@ struct StampEditor: View {
         // field lose focus, the moment the keyboard appeared.
         ZStack {
             PaperBackground()
-            if isOpen {
-                BookSpread {
-                    formPage
-                } right: {
-                    verdictPage
-                }
-            } else {
-                ScrollView {
-                    VStack(spacing: 0) {
+            VStack(spacing: 0) {
+                closeHandle
+                if isOpen {
+                    BookSpread {
                         formPage
+                    } right: {
                         verdictPage
                     }
+                    // Nothing scrolls here, so a pull anywhere closes it.
+                    .simultaneousGesture(pullToClose)
+                } else {
+                    ScrollView {
+                        VStack(spacing: 0) {
+                            formPage
+                            verdictPage
+                        }
+                        .background {
+                            GeometryReader { geo in
+                                Color.clear.preference(
+                                    key: ScrollTopKey.self,
+                                    value: geo.frame(in: .named(Self.scrollSpace)).minY
+                                )
+                            }
+                        }
+                    }
+                    .coordinateSpace(name: Self.scrollSpace)
+                    .scrollDismissesKeyboard(.interactively)
+                    // Already at the top and still pulling down: close.
+                    .onPreferenceChange(ScrollTopKey.self) { top in
+                        if top > 110, !notesFocused {
+                            requestClose()
+                        }
+                    }
                 }
-                .scrollDismissesKeyboard(.interactively)
             }
+        }
+        .offset(y: pull)
+        .confirmationDialog("Discard your changes?", isPresented: $confirmDiscard, titleVisibility: .visible) {
+            Button("Discard changes", role: .destructive) {
+                close()
+            }
+            Button("Keep editing", role: .cancel) {}
         }
         .sheet(item: $viewing) { photo in
             PhotoViewer(name: photo.name)
@@ -104,6 +140,71 @@ struct StampEditor: View {
         .onChange(of: drink.nonAlcoholic) { _, value in
             nonAlcoholic = value
         }
+    }
+
+    // MARK: Closing
+
+    private static let scrollSpace = "stamp-editor-scroll"
+
+    /// A grab handle across the top. Pull it down, or tap it, to go back.
+    private var closeHandle: some View {
+        Button(action: requestClose) {
+            Capsule()
+                .fill(Theme.rule)
+                .frame(width: 44, height: 5)
+                .frame(maxWidth: .infinity, minHeight: 44)
+                .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .simultaneousGesture(pullToClose)
+        .accessibilityLabel("Close")
+        .accessibilityHint("Goes back without stamping")
+    }
+
+    /// The editor follows the finger down, and closes if pulled far enough.
+    private var pullToClose: some Gesture {
+        DragGesture(minimumDistance: 16)
+            .updating($pull) { value, state, _ in
+                let down = value.translation.height
+                // Mostly-downward drags only, so sideways swipes are ignored.
+                if down > 0, down > abs(value.translation.width) * 1.5 {
+                    state = down
+                }
+            }
+            .onEnded { value in
+                let down = value.translation.height
+                guard down > abs(value.translation.width) * 1.5 else { return }
+                if down > 120 || value.predictedEndTranslation.height > 320 {
+                    requestClose()
+                }
+            }
+    }
+
+    private var hasChanges: Bool {
+        guard let existing else {
+            // A new stamp: only notes or photos are worth asking about.
+            return !notes.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || !photos.isEmpty
+        }
+        return verdict != existing.verdict
+            || date != existing.date
+            || notes != existing.notes
+            || photos != existing.photos
+            || rank != initialRank
+    }
+
+    /// Closes without saving, asking first if there is something to lose.
+    private func requestClose() {
+        guard !stamped, !confirmDiscard else { return }
+        if hasChanges {
+            confirmDiscard = true
+        } else {
+            close()
+        }
+    }
+
+    private func close() {
+        discardNewPhotos()
+        dismiss()
     }
 
     // MARK: Left page
@@ -460,5 +561,13 @@ private struct VerdictButton: View {
         }
         .buttonStyle(.plain)
         .accessibilityAddTraits(selected ? .isSelected : [])
+    }
+}
+
+private struct ScrollTopKey: PreferenceKey {
+    static let defaultValue: CGFloat = 0
+
+    static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) {
+        value = nextValue()
     }
 }
