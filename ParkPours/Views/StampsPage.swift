@@ -3,7 +3,12 @@ import SwiftUI
 /// Right page of a park spread: the stamps collected so far, best first.
 struct StampsPage: View {
     @EnvironmentObject private var store: PassportStore
-    let park: Park
+    /// The park as it was when this page was built.
+    let snapshot: Park
+    /// The park as it is now, read from the store.
+    private var park: Park {
+        store.park(snapshot.id) ?? snapshot
+    }
     /// True in the "all stamps" section, where the page needs its own heading.
     var showsTitle = false
     var onOpenPark: (() -> Void)? = nil
