@@ -3,7 +3,8 @@ import SwiftUI
 /// Left page of a park spread: the checklist of drinks.
 struct ChecklistPage: View {
     @EnvironmentObject private var store: PassportStore
-    let park: Park
+    /// The park as it was when this page was built.
+    let snapshot: Park
     let compact: Bool
     let onSelect: (Drink) -> Void
     let onIndex: () -> Void
@@ -12,6 +13,12 @@ struct ChecklistPage: View {
     @State private var showScan = false
     @State private var newName = ""
     @State private var newVenue = ""
+
+    /// The park as it is now. Read from the store so a drink added from this
+    /// page shows up straight away, without waiting for the page to be rebuilt.
+    private var park: Park {
+        store.park(snapshot.id) ?? snapshot
+    }
 
     private var stamped: Int {
         store.stampedCount(in: park)

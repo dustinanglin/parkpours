@@ -13,6 +13,11 @@ struct RootView: View {
     @State private var editTarget: EditTarget?
 
     var body: some View {
+        // The pages are built inside a closure that another view runs, so the
+        // store has to be read here for this view to be rebuilt when it
+        // changes (for example when a park gets its first stamp and needs an
+        // "all stamps" page).
+        let _ = store.parks
         // The keyboard must not change the open/closed decision here.
         FoldAwareContainer(ignoresKeyboard: true) { isOpen in
             ZStack {
@@ -78,13 +83,13 @@ struct RootView: View {
             let id = park.id
             return [
                 page("checklist-\(id)", ChecklistPage(
-                    park: park,
+                    snapshot: park,
                     compact: compact,
                     onSelect: { drink in edit(drink, in: park) },
                     onIndex: { go(.index) }
                 )),
                 page("stamps-\(id)", StampsPage(
-                    park: park,
+                    snapshot: park,
                     onSelect: { drink in edit(drink, in: park) }
                 ))
             ]
@@ -118,7 +123,7 @@ struct RootView: View {
         }
         for park in stamped {
             result.append(page("all-stamps-\(park.id)", StampsPage(
-                park: park,
+                snapshot: park,
                 showsTitle: true,
                 onOpenPark: { go(.park(park.id)) },
                 onSelect: { drink in edit(drink, in: park) }
