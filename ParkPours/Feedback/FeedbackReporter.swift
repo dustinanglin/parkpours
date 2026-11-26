@@ -37,6 +37,7 @@ struct FeedbackDraft: Identifiable {
         context.append("App: \(version) (\(build))")
         context.append("iOS: \(UIDevice.current.systemVersion)")
         context.append("Device: \(modelIdentifier())")
+        context.append("Passport: \(PassportStore.summary)")
 
         if let window {
             let bounds = window.bounds

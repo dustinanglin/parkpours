@@ -112,9 +112,9 @@ Add one to `version` when you edit by hand. To take a drink off the menu, set
 
 ## Non-alcoholic drinks
 
-Mocktails and other specialty drinks can be logged too. Tick "Non-alcoholic"
-on the entry page of a drink you added, or choose "Add as non-alcoholic" when
-adding one. For catalog drinks the tag is set in the catalog.
+Mocktails and other specialty drinks can be logged too. Turn on
+"Non-alcoholic" when adding a drink, or tick it later on the entry page of a
+drink you added. For catalog drinks the tag is set in the catalog.
 Tagged drinks show a small "Zero proof" mark in the checklist and rankings.
 
 ## Reporting bugs from the app

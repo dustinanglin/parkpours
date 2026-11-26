@@ -11,6 +11,7 @@ struct RootView: View {
     @State private var showCover = true
     @State private var pageIndex = 0
     @State private var editTarget: EditTarget?
+    @State private var rootSheet: RootSheet?
 
     var body: some View {
         // The pages are built inside a closure that another view runs, so the
@@ -36,8 +37,29 @@ struct RootView: View {
             .fullScreenCover(item: $editTarget) { target in
                 editor(for: target, isOpen: isOpen)
             }
+            .sheet(item: $rootSheet) { sheet in
+                sheetContent(sheet)
+            }
         }
-        .feedbackReporter(isActive: editTarget == nil)
+        .feedbackReporter(isActive: editTarget == nil && rootSheet == nil)
+    }
+
+    @ViewBuilder
+    private func sheetContent(_ sheet: RootSheet) -> some View {
+        Group {
+            switch sheet {
+            case .addDrink(let park):
+                AddDrinkSheet(park: store.park(park.id) ?? park)
+            case .scanDrink(let park):
+                MenuScanSheet(park: store.park(park.id) ?? park)
+            case .addPark:
+                AddParkSheet()
+            }
+        }
+        .environmentObject(store)
+        .preferredColorScheme(.light)
+        .tint(Theme.cover)
+        .feedbackReporter()
     }
 
     // MARK: Pages
@@ -86,7 +108,9 @@ struct RootView: View {
                     snapshot: park,
                     compact: compact,
                     onSelect: { drink in edit(drink, in: park) },
-                    onIndex: { go(.index) }
+                    onIndex: { go(.index) },
+                    onAdd: { rootSheet = .addDrink(park) },
+                    onScan: { rootSheet = .scanDrink(park) }
                 )),
                 page("stamps-\(id)", StampsPage(
                     snapshot: park,
@@ -109,7 +133,8 @@ struct RootView: View {
             page("parks", ParksPage(
                 compact: compact,
                 onOpen: { park in go(.park(park.id)) },
-                onClose: compact ? closeBook : nil
+                onClose: compact ? closeBook : nil,
+                onAddPark: { rootSheet = .addPark }
             )),
             page("rankings", RankingsPage(
                 onSelect: { park, drink in edit(drink, in: park) }
