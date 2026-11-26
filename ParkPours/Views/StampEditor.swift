@@ -8,7 +8,12 @@ struct StampEditor: View {
     @Environment(\.dismiss) private var dismiss
 
     let park: Park
-    let drink: Drink
+    /// The drink as it was when the editor opened.
+    private let original: Drink
+    /// The drink as it is now, so edits made from here show straight away.
+    private var drink: Drink {
+        store.park(park.id)?.drinks.first { $0.id == original.id } ?? original
+    }
     private let isOpen: Bool
     private let isExisting: Bool
     private let maxRank: Int
@@ -26,13 +31,14 @@ struct StampEditor: View {
     @State private var pickerItems: [PhotosPickerItem] = []
     @State private var viewing: PhotoRef?
     @State private var nonAlcoholic: Bool
-    @State private var showPublish = false
+    @State private var editMode: DrinkEditMode?
     @State private var published = false
+    @State private var deleted = false
     @FocusState private var notesFocused: Bool
 
     init(park: Park, drink: Drink, existing: Stamp?, existingRank: Int?, stampedCount: Int, isOpen: Bool) {
         self.park = park
-        self.drink = drink
+        self.original = drink
         self.isOpen = isOpen
         _photos = State(initialValue: existing?.photos ?? [])
         _nonAlcoholic = State(initialValue: drink.nonAlcoholic)
@@ -74,13 +80,29 @@ struct StampEditor: View {
         .sheet(item: $viewing) { photo in
             PhotoViewer(name: photo.name)
         }
-        .sheet(isPresented: $showPublish) {
-            PublishDrinkSheet(park: park, drink: drink) {
-                published = true
+        .sheet(item: $editMode, onDismiss: {
+            // The drink is gone, so there is nothing left to stamp.
+            if deleted {
+                dismiss()
+            }
+        }) { mode in
+            DrinkEditSheet(park: park, drink: drink, mode: mode) { result in
+                switch result {
+                case .deleted:
+                    discardNewPhotos()
+                    deleted = true
+                case .saved:
+                    if mode == .publish {
+                        published = true
+                    }
+                }
             }
             .environmentObject(store)
             .preferredColorScheme(.light)
             .tint(Theme.cover)
+        }
+        .onChange(of: drink.nonAlcoholic) { _, value in
+            nonAlcoholic = value
         }
     }
 
@@ -111,7 +133,7 @@ struct StampEditor: View {
 
             notesField
             photosField
-            curatorRow
+            drinkActions
         } footer: {
             VStack(alignment: .leading, spacing: 2) {
                 Text(Formats.mrz(["P", park.name, drink.name]))
@@ -182,26 +204,48 @@ struct StampEditor: View {
         .accessibilityAddTraits(nonAlcoholic ? .isSelected : [])
     }
 
-    /// Curator only: shown for a personal drink when a GitHub token is saved.
+    /// Edit links. Anyone can edit a drink they added. With a GitHub token
+    /// saved (curator), personal drinks can be published and catalog drinks
+    /// edited.
     @ViewBuilder
-    private var curatorRow: some View {
-        if published {
-            Text("PUBLISHED TO THE CATALOG")
-                .font(Theme.mono(11))
-                .tracking(1.1)
-                .foregroundStyle(Theme.muted)
-        } else if store.isCustom(drink), TokenStore.load() != nil {
-            Button {
-                showPublish = true
-            } label: {
-                HStack(spacing: 8) {
-                    Image(systemName: "arrow.up.doc")
-                    Text("PUBLISH TO CATALOG")
-                    Spacer()
+    private var drinkActions: some View {
+        let isCurator = TokenStore.load() != nil
+        if store.isCustom(drink) {
+            // Stacked: the two links do not fit side by side on a closed page.
+            VStack(alignment: .leading, spacing: 0) {
+                actionLink("EDIT DRINK", systemImage: "pencil") {
+                    editMode = .personal
+                }
+                if isCurator {
+                    actionLink("PUBLISH TO CATALOG", systemImage: "arrow.up.doc") {
+                        editMode = .publish
+                    }
                 }
             }
-            .buttonStyle(LinkButtonStyle())
+        } else if isCurator {
+            HStack(spacing: 20) {
+                actionLink("EDIT CATALOG ENTRY", systemImage: "pencil") {
+                    editMode = .catalog
+                }
+                if published {
+                    Text("PUBLISHED")
+                        .font(Theme.mono(11))
+                        .tracking(1.1)
+                        .foregroundStyle(Theme.muted)
+                }
+                Spacer(minLength: 0)
+            }
         }
+    }
+
+    private func actionLink(_ title: String, systemImage: String, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            HStack(spacing: 8) {
+                Image(systemName: systemImage)
+                Text(title)
+            }
+        }
+        .buttonStyle(LinkButtonStyle())
     }
 
     private var photosField: some View {

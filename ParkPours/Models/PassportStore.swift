@@ -215,6 +215,25 @@ final class PassportStore: ObservableObject {
         persist()
     }
 
+    /// Replaces a personal drink with an edited copy (same id).
+    func updateDrink(_ updated: Drink, in park: Park) {
+        guard let parkIndex = data.parks.firstIndex(where: { $0.id == park.id }),
+              let drinkIndex = data.parks[parkIndex].drinks.firstIndex(where: { $0.id == updated.id }) else { return }
+        data.parks[parkIndex].drinks[drinkIndex] = updated
+        persist()
+    }
+
+    /// Deletes a personal drink along with its stamp, photos and ranking.
+    func deleteDrink(_ drink: Drink, in park: Park) {
+        guard let parkIndex = data.parks.firstIndex(where: { $0.id == park.id }),
+              data.parks[parkIndex].drinks.contains(where: { $0.id == drink.id }) else { return }
+        data.parks[parkIndex].drinks.removeAll { $0.id == drink.id }
+        data.stamps[drink.id]?.photos.forEach { PhotoStore.delete($0) }
+        data.stamps[drink.id] = nil
+        data.rankings[park.id] = (data.rankings[park.id] ?? []).filter { $0 != drink.id }
+        persist()
+    }
+
     /// Only personal drinks can be changed here; catalog drinks are fixed.
     func setNonAlcoholic(_ value: Bool, for drink: Drink, in park: Park) {
         guard let parkIndex = data.parks.firstIndex(where: { $0.id == park.id }),

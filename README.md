@@ -81,10 +81,14 @@ Stamps, notes, photos and rankings are always personal and stay on the phone.
 photo of a menu (on the phone, nothing is uploaded) and lets you tick the
 lines that are drinks. They are added as personal drinks.
 
+**Editing a drink.** The entry page of a drink you added has "Edit drink":
+change its name, venue, area or non-alcoholic tag, or delete it.
+
 **Curating the catalog.** With a GitHub token saved in the app (the same one
-used for bug reports), a personal drink's entry page shows "Publish to
-catalog". That lets you tidy the name, venue and area and writes the drink
-into `catalog.json`. The drink keeps its id, so your stamp carries over.
+used for bug reports), two more links appear on entry pages. "Publish to
+catalog" on a personal drink lets you tidy it and writes it into
+`catalog.json`. "Edit catalog entry" on a catalog drink changes it there, or
+retires it. A drink keeps its id through all of this, so stamps carry over.
 
 The file can also be edited directly on GitHub. Each drink needs a unique
 `id` and a `name`; `venue`, `area`, `nonAlcoholic` and `retired` are optional.
