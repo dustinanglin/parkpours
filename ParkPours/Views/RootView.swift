@@ -162,8 +162,6 @@ struct RootView: View {
         }
         .environmentObject(store)
         .preferredColorScheme(.light)
-        // See-through, so the book shows behind the editor as it is pulled down.
-        .presentationBackground(.clear)
         .feedbackReporter()
     }
 
